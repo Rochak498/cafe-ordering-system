@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="card">
+    <h2>Orders</h2>
+
+    {% if orders %}
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Customer</th>
+                    <th>Item</th>
+                    <th>Qty</th>
+                    <th>Unit Price</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th>Update</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td>{{ order.id }}</td>
+                    <td>{{ order.customer_name }}</td>
+                    <td>{{ order.item_name }}</td>
+                    <td>{{ order.quantity }}</td>
+                    <td>${{ "%.2f"|format(order.unit_price) }}</td>
+                    <td>${{ "%.2f"|format(order.total_price) }}</td>
+                    <td>{{ order.status }}</td>
+                    <td>
+                        <form method="POST" action="{{ url_for('update_status', order_id=order.id) }}">
+                            <select name="status">
+                                <option value="Pending" {% if order.status == "Pending" %}selected{% endif %}>Pending</option>
+                                <option value="Preparing" {% if order.status == "Preparing" %}selected{% endif %}>Preparing</option>
+                                <option value="Ready" {% if order.status == "Ready" %}selected{% endif %}>Ready</option>
+                                <option value="Completed" {% if order.status == "Completed" %}selected{% endif %}>Completed</option>
+                            </select>
+                            <button type="submit">Update</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No orders have been created yet.</p>
+    {% endif %}
+</section>
+{% endblock %}
