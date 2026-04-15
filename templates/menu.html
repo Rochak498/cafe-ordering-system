@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="card">
+    <h2>Menu</h2>
+    <p>Select an item to place an order.</p>
+
+    <div class="menu-grid">
+        {% for item in menu_items %}
+        <article class="menu-item">
+            <p class="menu-category">{{ item.category }}</p>
+            <h3>{{ item.name }}</h3>
+            <p class="price">${{ "%.2f"|format(item.price) }}</p>
+            <a class="button-link" href="{{ url_for('create_order', item_id=item.id) }}">Order Now</a>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

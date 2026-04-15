@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="card">
+    <h2>Track Your Order</h2>
+    <form method="POST">
+        <label for="order_code">Order Code</label>
+        <input type="text" id="order_code" name="order_code" value="{{ order_code or '' }}" placeholder="Enter your order code" required>
+        <button type="submit">Track Order</button>
+    </form>
+</section>
+
+{% if order %}
+<section class="card">
+    <h3>Order Details</h3>
+    <p><strong>Order Code:</strong> {{ order.order_code }}</p>
+    <p><strong>Customer:</strong> {{ order.customer_name }}</p>
+    <p><strong>Item:</strong> {{ order.item_name }}</p>
+    <p><strong>Quantity:</strong> {{ order.quantity }}</p>
+    <p><strong>Total:</strong> ${{ "%.2f"|format(order.total_price) }}</p>
+    <p><strong>Status:</strong> <span class="status-badge status-{{ order.status|lower }}">{{ order.status }}</span></p>
+    {% if order.notes %}
+    <p><strong>Notes:</strong> {{ order.notes }}</p>
+    {% endif %}
+</section>
+{% endif %}
+{% endblock %}

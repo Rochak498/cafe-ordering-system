@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="hero card">
+    <h2>QR-Based Café Ordering MVP</h2>
+    <p>
+        This prototype supports the core Project A workflow: customer menu access,
+        digital order placement, order tracking, and staff order management.
+    </p>
+    <div class="hero-actions">
+        <a class="button-link" href="{{ url_for('menu') }}">Customer Menu</a>
+        <a class="button-link secondary" href="{{ url_for('orders') }}">Staff Order Queue</a>
+    </div>
+</section>
+
+<section class="card info-grid">
+    <div>
+        <h3>Customer flow</h3>
+        <ol>
+            <li>Scan QR code or open the menu link.</li>
+            <li>Browse available items.</li>
+            <li>Place an order and receive an order code.</li>
+            <li>Track progress using the order code.</li>
+        </ol>
+    </div>
+    <div>
+        <h3>Staff flow</h3>
+        <ol>
+            <li>Open the staff order queue.</li>
+            <li>Review incoming orders.</li>
+            <li>Update order status.</li>
+            <li>Monitor metrics in the dashboard.</li>
+        </ol>
+    </div>
+</section>
+{% endblock %}
