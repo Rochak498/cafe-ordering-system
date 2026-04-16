@@ -7,6 +7,7 @@ from contextlib import closing
 import secrets
 
 app = Flask(__name__)
+<<<<<<< HEAD
 app.secret_key = os.getenv("SECRET_KEY", "change_this_before_production")
 DB_PATH = "database.db"
 VALID_STATUSES = ("Pending", "Preparing", "Ready", "Completed")
@@ -16,6 +17,11 @@ STATUS_HELP_TEXT = {
     "Ready": "Your order is ready for collection.",
     "Completed": "Your order has been completed. Thank you for visiting Daxxi140 Café.",
 }
+=======
+app.secret_key = "change_this_before_production"
+DB_PATH = "database.db"
+VALID_STATUSES = ("Pending", "Preparing", "Ready", "Completed")
+>>>>>>> 307902df8d7db18a550e380d547538169d55f38e
 
 
 def get_db_connection():
@@ -28,6 +34,7 @@ def generate_order_code(length: int = 8) -> str:
     return secrets.token_hex(length // 2).upper()
 
 
+<<<<<<< HEAD
 def build_unique_order_code() -> str:
     while True:
         code = generate_order_code()
@@ -70,10 +77,16 @@ def home():
     return render_template(
         "home.html", available_items=available_items, total_orders=total_orders
     )
+=======
+@app.route("/")
+def home():
+    return render_template("home.html")
+>>>>>>> 307902df8d7db18a550e380d547538169d55f38e
 
 
 @app.route("/menu")
 def menu():
+<<<<<<< HEAD
     category = request.args.get("category", "All")
     search = request.args.get("search", "").strip()
 
@@ -104,6 +117,13 @@ def menu():
         selected_category=category,
         search=search,
     )
+=======
+    with closing(get_db_connection()) as conn:
+        menu_items = conn.execute(
+            "SELECT * FROM menu_items WHERE is_available = 1 ORDER BY category, name"
+        ).fetchall()
+    return render_template("menu.html", menu_items=menu_items)
+>>>>>>> 307902df8d7db18a550e380d547538169d55f38e
 
 
 @app.route("/order/<int:item_id>", methods=["GET", "POST"])
@@ -123,10 +143,13 @@ def create_order(item_id):
         if not customer_name or not quantity_raw:
             flash("Customer name and quantity are required.", "error")
             return redirect(url_for("create_order", item_id=item_id))
+<<<<<<< HEAD
 
         if len(customer_name) < 2:
             flash("Customer name must contain at least 2 characters.", "error")
             return redirect(url_for("create_order", item_id=item_id))
+=======
+>>>>>>> 307902df8d7db18a550e380d547538169d55f38e
 
         try:
             quantity = int(quantity_raw)
@@ -136,7 +159,11 @@ def create_order(item_id):
             flash("Quantity must be a whole number greater than 0.", "error")
             return redirect(url_for("create_order", item_id=item_id))
 
+<<<<<<< HEAD
         order_code = build_unique_order_code()
+=======
+        order_code = generate_order_code()
+>>>>>>> 307902df8d7db18a550e380d547538169d55f38e
         total_price = float(item["price"]) * quantity
 
         with closing(get_db_connection()) as conn:
@@ -184,8 +211,11 @@ def track_order(order_code=None):
 
         if order is None and request.method == "POST":
             flash("No order found for that order code.", "error")
+<<<<<<< HEAD
         elif order is not None:
             order = prepare_order_rows([order])[0]
+=======
+>>>>>>> 307902df8d7db18a550e380d547538169d55f38e
 
     return render_template("track.html", order=order, order_code=searched_code)
 
@@ -193,6 +223,7 @@ def track_order(order_code=None):
 @app.route("/orders")
 def orders():
     status_filter = request.args.get("status", "All")
+<<<<<<< HEAD
     search = request.args.get("search", "").strip()
 
     query = "SELECT * FROM orders WHERE 1=1"
@@ -207,19 +238,34 @@ def orders():
         like_value = f"%{search}%"
         params.extend([like_value, like_value, like_value])
 
+=======
+    query = "SELECT * FROM orders"
+    params = []
+
+    if status_filter in VALID_STATUSES:
+        query += " WHERE status = ?"
+        params.append(status_filter)
+
+>>>>>>> 307902df8d7db18a550e380d547538169d55f38e
     query += " ORDER BY created_at DESC"
 
     with closing(get_db_connection()) as conn:
         orders = conn.execute(query, params).fetchall()
 
+<<<<<<< HEAD
     orders = prepare_order_rows(orders)
 
+=======
+>>>>>>> 307902df8d7db18a550e380d547538169d55f38e
     return render_template(
         "orders.html",
         orders=orders,
         valid_statuses=VALID_STATUSES,
         status_filter=status_filter,
+<<<<<<< HEAD
         search=search,
+=======
+>>>>>>> 307902df8d7db18a550e380d547538169d55f38e
     )
 
 
@@ -295,6 +341,7 @@ def dashboard():
         completed_orders = conn.execute(
             "SELECT COUNT(*) AS count FROM orders WHERE status = 'Completed'"
         ).fetchone()["count"]
+<<<<<<< HEAD
         average_order_value = conn.execute(
             "SELECT COALESCE(AVG(total_price), 0) AS avg_value FROM orders"
         ).fetchone()["avg_value"]
@@ -312,6 +359,8 @@ def dashboard():
         ).fetchall()
 
     recent_orders = prepare_order_rows(recent_orders)
+=======
+>>>>>>> 307902df8d7db18a550e380d547538169d55f38e
 
     return render_template(
         "dashboard.html",
@@ -321,9 +370,12 @@ def dashboard():
         preparing_orders=preparing_orders,
         ready_orders=ready_orders,
         completed_orders=completed_orders,
+<<<<<<< HEAD
         average_order_value=round(average_order_value or 0, 2),
         top_items=top_items,
         recent_orders=recent_orders,
+=======
+>>>>>>> 307902df8d7db18a550e380d547538169d55f38e
     )
 
 

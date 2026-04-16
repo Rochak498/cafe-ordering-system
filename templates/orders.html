@@ -5,6 +5,7 @@
     <div class="section-head">
         <div>
             <h2>Staff Order Queue</h2>
+<<<<<<< HEAD
             <p>Review, search, filter, and update customer orders.</p>
         </div>
         <a class="button-link secondary" href="{{ url_for('export_orders') }}">Export CSV</a>
@@ -14,11 +15,19 @@
         <div>
             <label for="status">Filter by status</label>
             <select id="status" name="status">
+=======
+            <p>Review and update customer orders.</p>
+        </div>
+        <form method="GET" class="inline-filter">
+            <label for="status">Filter by status</label>
+            <select id="status" name="status" onchange="this.form.submit()">
+>>>>>>> 307902df8d7db18a550e380d547538169d55f38e
                 <option value="All" {% if status_filter == 'All' %}selected{% endif %}>All</option>
                 {% for status in valid_statuses %}
                     <option value="{{ status }}" {% if status_filter == status %}selected{% endif %}>{{ status }}</option>
                 {% endfor %}
             </select>
+<<<<<<< HEAD
         </div>
         <div>
             <label for="search">Search order, customer, or item</label>
@@ -28,6 +37,10 @@
             <button type="submit">Apply Filters</button>
         </div>
     </form>
+=======
+        </form>
+    </div>
+>>>>>>> 307902df8d7db18a550e380d547538169d55f38e
 
     {% if orders %}
         <div class="table-wrap">
@@ -40,7 +53,10 @@
                         <th>Qty</th>
                         <th>Total</th>
                         <th>Status</th>
+<<<<<<< HEAD
                         <th>Estimated Wait</th>
+=======
+>>>>>>> 307902df8d7db18a550e380d547538169d55f38e
                         <th>Created</th>
                         <th>Update</th>
                     </tr>
@@ -56,6 +72,7 @@
                         </td>
                         <td>{{ order.quantity }}</td>
                         <td>${{ "%.2f"|format(order.total_price) }}</td>
+<<<<<<< HEAD
                         <td>
                             <span class="status-badge status-{{ order.status|lower }}">{{ order.status }}</span>
                             <div class="muted small-text">{{ order.status_help }}</div>
@@ -67,6 +84,9 @@
                                 Complete
                             {% endif %}
                         </td>
+=======
+                        <td><span class="status-badge status-{{ order.status|lower }}">{{ order.status }}</span></td>
+>>>>>>> 307902df8d7db18a550e380d547538169d55f38e
                         <td>{{ order.created_at }}</td>
                         <td>
                             <form method="POST" action="{{ url_for('update_status', order_id=order.id) }}">

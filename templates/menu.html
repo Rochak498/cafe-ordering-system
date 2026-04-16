@@ -2,6 +2,7 @@
 
 {% block content %}
 <section class="card">
+<<<<<<< HEAD
     <div class="section-head">
         <div>
             <h2>Customer Menu</h2>
@@ -26,6 +27,10 @@
             </div>
         </form>
     </div>
+=======
+    <h2>Menu</h2>
+    <p>Select an item to place an order.</p>
+>>>>>>> 307902df8d7db18a550e380d547538169d55f38e
 
     <div class="menu-grid">
         {% for item in menu_items %}
@@ -35,8 +40,11 @@
             <p class="price">${{ "%.2f"|format(item.price) }}</p>
             <a class="button-link" href="{{ url_for('create_order', item_id=item.id) }}">Order Now</a>
         </article>
+<<<<<<< HEAD
         {% else %}
         <p>No menu items match the current filter.</p>
+=======
+>>>>>>> 307902df8d7db18a550e380d547538169d55f38e
         {% endfor %}
     </div>
 </section>
