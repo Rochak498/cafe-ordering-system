@@ -1,39 +1,83 @@
+:root {
+    --bg: #f6f7fb;
+    --card: #ffffff;
+    --text: #222;
+    --muted: #6b7280;
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --header: #1f2937;
+    --border: #d1d5db;
+    --success-bg: #dcfce7;
+    --success-text: #166534;
+    --error-bg: #fee2e2;
+    --error-text: #991b1b;
+}
+
+* {
+    box-sizing: border-box;
+}
+
 body {
     font-family: Arial, sans-serif;
     margin: 0;
-    background: #f6f7fb;
-    color: #222;
+    background: var(--bg);
+    color: var(--text);
 }
 
-header {
-    background: #1f2937;
+.container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.site-header {
+    background: var(--header);
     color: white;
-    padding: 20px;
+    padding: 20px 0;
 }
 
-header h1 {
+.site-header h1 {
     margin: 0 0 10px 0;
+    font-size: 1.8rem;
+}
+
+nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
 }
 
 nav a {
     color: white;
     text-decoration: none;
-    margin-right: 16px;
     font-weight: bold;
 }
 
 main {
-    max-width: 1000px;
-    margin: 30px auto;
-    padding: 0 20px;
+    padding-top: 30px;
+    padding-bottom: 30px;
 }
 
 .card {
-    background: white;
+    background: var(--card);
     padding: 24px;
     border-radius: 12px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
     margin-bottom: 20px;
+}
+
+.hero-actions,
+.info-grid,
+.section-head {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.info-grid > div {
+    flex: 1 1 300px;
 }
 
 label {
@@ -43,36 +87,84 @@ label {
     font-weight: bold;
 }
 
-input, select, button {
+input,
+select,
+button,
+textarea {
     width: 100%;
     padding: 10px;
     margin-bottom: 12px;
     border-radius: 8px;
-    border: 1px solid #ccc;
-    box-sizing: border-box;
+    border: 1px solid var(--border);
+    font: inherit;
 }
 
-button {
-    background: #2563eb;
+button,
+.button-link {
+    display: inline-block;
+    background: var(--primary);
     color: white;
     border: none;
     cursor: pointer;
     font-weight: bold;
+    text-decoration: none;
+    text-align: center;
+    padding: 11px 16px;
+    border-radius: 8px;
 }
 
-button:hover {
-    background: #1d4ed8;
+.button-link.secondary {
+    background: #374151;
+}
+
+button:hover,
+.button-link:hover {
+    background: var(--primary-hover);
+}
+
+.button-link.secondary:hover {
+    background: #111827;
+}
+
+.menu-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+}
+
+.menu-item {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+}
+
+.menu-category,
+.muted {
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+.price {
+    font-size: 1.1rem;
+    font-weight: bold;
+}
+
+.table-wrap {
+    overflow-x: auto;
 }
 
 table {
     width: 100%;
     border-collapse: collapse;
+    min-width: 800px;
 }
 
-table th, table td {
+table th,
+table td {
     border: 1px solid #ddd;
     padding: 10px;
     text-align: center;
+    vertical-align: top;
 }
 
 table th {
@@ -86,13 +178,13 @@ table th {
 }
 
 .flash.success {
-    background: #dcfce7;
-    color: #166534;
+    background: var(--success-bg);
+    color: var(--success-text);
 }
 
 .flash.error {
-    background: #fee2e2;
-    color: #991b1b;
+    background: var(--error-bg);
+    color: var(--error-text);
 }
 
 .dashboard-grid {
@@ -107,8 +199,46 @@ table th {
     font-weight: bold;
 }
 
-footer {
+.status-badge {
+    display: inline-block;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 0.9rem;
+    font-weight: bold;
+}
+
+.status-pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-preparing {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.status-ready {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-completed {
+    background: #e5e7eb;
+    color: #111827;
+}
+
+.site-footer {
     text-align: center;
     padding: 20px;
     color: #666;
+}
+
+@media (max-width: 700px) {
+    .site-header h1 {
+        font-size: 1.4rem;
+    }
+
+    .card {
+        padding: 18px;
+    }
 }

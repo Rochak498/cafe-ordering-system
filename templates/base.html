@@ -7,16 +7,20 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <header>
-        <h1>Daxxi140 Café Ordering System</h1>
-        <nav>
-            <a href="{{ url_for('index') }}">Create Order</a>
-            <a href="{{ url_for('orders') }}">View Orders</a>
-            <a href="{{ url_for('dashboard') }}">Dashboard</a>
-        </nav>
+    <header class="site-header">
+        <div class="container">
+            <h1>Daxxi140 Café Ordering System</h1>
+            <nav>
+                <a href="{{ url_for('home') }}">Home</a>
+                <a href="{{ url_for('menu') }}">Menu</a>
+                <a href="{{ url_for('track_order') }}">Track Order</a>
+                <a href="{{ url_for('orders') }}">Staff Orders</a>
+                <a href="{{ url_for('dashboard') }}">Dashboard</a>
+            </nav>
+        </div>
     </header>
 
-    <main>
+    <main class="container">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
@@ -28,8 +32,8 @@
         {% block content %}{% endblock %}
     </main>
 
-    <footer>
-        <p>Iteration 1 MVP for ISYS3007</p>
+    <footer class="site-footer">
+        <p>Team X Project MVP aligned with Jira and Confluence </p>
     </footer>
 </body>
 </html>
