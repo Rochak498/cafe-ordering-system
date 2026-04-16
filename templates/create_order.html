@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="card split-layout">
+    <div>
+        <p class="eyebrow">Selected Item</p>
+        <h2>Place Order</h2>
+        <p><strong>Item:</strong> {{ item.name }}</p>
+        <p><strong>Category:</strong> {{ item.category }}</p>
+        <p><strong>Unit Price:</strong> ${{ "%.2f"|format(item.price) }}</p>
+        <p class="muted">Please enter customer details and any preparation notes.</p>
+    </div>
+
+    <form method="POST" class="form-panel">
+        <label for="customer_name">Customer Name</label>
+        <input type="text" id="customer_name" name="customer_name" minlength="2" required>
+
+        <label for="quantity">Quantity</label>
+        <input type="number" id="quantity" name="quantity" min="1" value="1" required>
+
+        <label for="notes">Order Notes</label>
+        <textarea id="notes" name="notes" rows="4" placeholder="Optional notes, e.g. no sugar"></textarea>
+
+        <button type="submit">Submit Order</button>
+    </form>
+</section>
+{% endblock %}

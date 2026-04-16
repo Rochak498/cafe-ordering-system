@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="card split-layout">
+    <div>
+        <p class="eyebrow">Customer Order Tracking</p>
+        <h2>Track Your Order</h2>
+        <p>Enter your order code to check the current preparation status.</p>
+    </div>
+    <form method="POST" class="form-panel">
+        <label for="order_code">Order Code</label>
+        <input type="text" id="order_code" name="order_code" value="{{ order_code or '' }}" placeholder="Enter your order code" required>
+        <button type="submit">Track Order</button>
+    </form>
+</section>
+
+{% if order %}
+<section class="card">
+    <h3>Order Details</h3>
+    <div class="details-grid">
+        <div><strong>Order Code:</strong> {{ order.order_code }}</div>
+        <div><strong>Customer:</strong> {{ order.customer_name }}</div>
+        <div><strong>Item:</strong> {{ order.item_name }}</div>
+        <div><strong>Quantity:</strong> {{ order.quantity }}</div>
+        <div><strong>Total:</strong> ${{ "%.2f"|format(order.total_price) }}</div>
+        <div><strong>Status:</strong> <span class="status-badge status-{{ order.status|lower }}">{{ order.status }}</span></div>
+    </div>
+    {% if order.notes %}
+    <p><strong>Notes:</strong> {{ order.notes }}</p>
+    {% endif %}
+    <p class="muted"><strong>Status update:</strong> {{ order.status_help }}</p>
+    <p class="muted"><strong>Estimated remaining time:</strong>
+        {% if order.estimated_minutes > 0 %}
+            {{ order.estimated_minutes }} minutes
+        {% else %}
+            Your order is ready or completed.
+        {% endif %}
+    </p>
+</section>
+{% endif %}
+{% endblock %}

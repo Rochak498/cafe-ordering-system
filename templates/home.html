@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="hero card">
+    <div>
+        <p class="eyebrow">Iteration 1 MVP</p>
+        <h2>QR-Based Café Ordering and Staff Order Management</h2>
+        <p>
+            This prototype addresses the café’s core business problems by providing digital menu access,
+            structured order placement, order tracking, and a staff-facing order queue with dashboard reporting.
+        </p>
+        <div class="hero-actions">
+            <a class="button-link" href="{{ url_for('menu') }}">Browse Menu</a>
+            <a class="button-link secondary" href="{{ url_for('orders') }}">Open Staff Queue</a>
+        </div>
+    </div>
+    <div class="hero-stats">
+        <div>
+            <span class="stat-value">{{ available_items }}</span>
+            <span class="stat-label">Available menu items</span>
+        </div>
+        <div>
+            <span class="stat-value">{{ total_orders }}</span>
+            <span class="stat-label">Orders recorded</span>
+        </div>
+    </div>
+</section>
+
+<section class="card info-grid">
+    <div>
+        <h3>Customer workflow</h3>
+        <ol>
+            <li>Open the menu through a QR code or direct link.</li>
+            <li>Choose an available menu item.</li>
+            <li>Place the order and receive an order code.</li>
+            <li>Track progress using the order code.</li>
+        </ol>
+    </div>
+    <div>
+        <h3>Staff workflow</h3>
+        <ol>
+            <li>Review incoming orders in the staff queue.</li>
+            <li>Update the order status as work progresses.</li>
+            <li>Use the dashboard to monitor operational metrics.</li>
+            <li>Export order data for review if required.</li>
+        </ol>
+    </div>
+</section>
+{% endblock %}
