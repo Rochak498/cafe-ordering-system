@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="card">
+    <div class="section-head">
+        <div>
+            <h2>Staff Order Queue</h2>
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> 93000c68efa063a5c634abbf7d106ef0859a851e
+            <p>Review, search, filter, and update customer orders.</p>
+        </div>
+        <a class="button-link secondary" href="{{ url_for('export_orders') }}">Export CSV</a>
+    </div>
+
+    <form method="GET" class="filter-grid compact">
+        <div>
+            <label for="status">Filter by status</label>
+            <select id="status" name="status">
+<<<<<<< HEAD
+=======
+=======
+            <p>Review and update customer orders.</p>
+        </div>
+        <form method="GET" class="inline-filter">
+            <label for="status">Filter by status</label>
+            <select id="status" name="status" onchange="this.form.submit()">
+>>>>>>> 307902df8d7db18a550e380d547538169d55f38e
+>>>>>>> 93000c68efa063a5c634abbf7d106ef0859a851e
+                <option value="All" {% if status_filter == 'All' %}selected{% endif %}>All</option>
+                {% for status in valid_statuses %}
+                    <option value="{{ status }}" {% if status_filter == status %}selected{% endif %}>{{ status }}</option>
+                {% endfor %}
+            </select>
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> 93000c68efa063a5c634abbf7d106ef0859a851e
+        </div>
+        <div>
+            <label for="search">Search order, customer, or item</label>
+            <input id="search" name="search" type="text" value="{{ search }}" placeholder="e.g. Sarah or Latte">
+        </div>
+        <div class="filter-actions">
+            <button type="submit">Apply Filters</button>
+        </div>
+    </form>
+<<<<<<< HEAD
+=======
+=======
+        </form>
+    </div>
+>>>>>>> 307902df8d7db18a550e380d547538169d55f38e
+>>>>>>> 93000c68efa063a5c634abbf7d106ef0859a851e
+
+    {% if orders %}
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Customer</th>
+                        <th>Item</th>
+                        <th>Qty</th>
+                        <th>Total</th>
+                        <th>Status</th>
+<<<<<<< HEAD
+                        <th>Estimated Wait</th>
+=======
+<<<<<<< HEAD
+                        <th>Estimated Wait</th>
+=======
+>>>>>>> 307902df8d7db18a550e380d547538169d55f38e
+>>>>>>> 93000c68efa063a5c634abbf7d106ef0859a851e
+                        <th>Created</th>
+                        <th>Update</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                    <tr>
+                        <td>{{ order.order_code }}</td>
+                        <td>{{ order.customer_name }}</td>
+                        <td>
+                            {{ order.item_name }}
+                            {% if order.notes %}<div class="muted">{{ order.notes }}</div>{% endif %}
+                        </td>
+                        <td>{{ order.quantity }}</td>
+                        <td>${{ "%.2f"|format(order.total_price) }}</td>
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> 93000c68efa063a5c634abbf7d106ef0859a851e
+                        <td>
+                            <span class="status-badge status-{{ order.status|lower }}">{{ order.status }}</span>
+                            <div class="muted small-text">{{ order.status_help }}</div>
+                        </td>
+                        <td>
+                            {% if order.estimated_minutes > 0 %}
+                                {{ order.estimated_minutes }} mins
+                            {% else %}
+                                Complete
+                            {% endif %}
+                        </td>
+<<<<<<< HEAD
+=======
+=======
+                        <td><span class="status-badge status-{{ order.status|lower }}">{{ order.status }}</span></td>
+>>>>>>> 307902df8d7db18a550e380d547538169d55f38e
+>>>>>>> 93000c68efa063a5c634abbf7d106ef0859a851e
+                        <td>{{ order.created_at }}</td>
+                        <td>
+                            <form method="POST" action="{{ url_for('update_status', order_id=order.id) }}">
+                                <select name="status">
+                                    {% for status in valid_statuses %}
+                                    <option value="{{ status }}" {% if order.status == status %}selected{% endif %}>{{ status }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit">Update</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p>No orders match the current filter.</p>
+    {% endif %}
+</section>
+{% endblock %}

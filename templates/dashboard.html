@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="dashboard-grid">
+    <div class="card metric">
+        <h2>Total Orders</h2>
+        <p>{{ total_orders }}</p>
+    </div>
+
+    <div class="card metric">
+        <h2>Total Revenue</h2>
+        <p>${{ "%.2f"|format(total_revenue) }}</p>
+    </div>
+
+    <div class="card metric">
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> 93000c68efa063a5c634abbf7d106ef0859a851e
+        <h2>Average Order Value</h2>
+        <p>${{ "%.2f"|format(average_order_value) }}</p>
+    </div>
+
+    <div class="card metric">
+<<<<<<< HEAD
+=======
+=======
+>>>>>>> 307902df8d7db18a550e380d547538169d55f38e
+>>>>>>> 93000c68efa063a5c634abbf7d106ef0859a851e
+        <h2>Pending</h2>
+        <p>{{ pending_orders }}</p>
+    </div>
+
+    <div class="card metric">
+        <h2>Preparing</h2>
+        <p>{{ preparing_orders }}</p>
+    </div>
+
+    <div class="card metric">
+        <h2>Ready</h2>
+        <p>{{ ready_orders }}</p>
+    </div>
+
+    <div class="card metric">
+        <h2>Completed</h2>
+        <p>{{ completed_orders }}</p>
+    </div>
+</section>
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> 93000c68efa063a5c634abbf7d106ef0859a851e
+
+<section class="split-layout">
+    <article class="card">
+        <h3>Top Selling Items</h3>
+        {% if top_items %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Qty Sold</th>
+                    <th>Sales</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in top_items %}
+                <tr>
+                    <td>{{ item.item_name }}</td>
+                    <td>{{ item.total_quantity }}</td>
+                    <td>${{ "%.2f"|format(item.sales) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No sales data available yet.</p>
+        {% endif %}
+    </article>
+
+    <article class="card">
+        <h3>Recent Orders</h3>
+        {% if recent_orders %}
+        <div class="recent-list">
+            {% for order in recent_orders %}
+            <div class="recent-order">
+                <div>
+                    <strong>{{ order.order_code }}</strong> — {{ order.customer_name }}
+                    <div class="muted">{{ order.item_name }} × {{ order.quantity }}</div>
+                </div>
+                <span class="status-badge status-{{ order.status|lower }}">{{ order.status }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p>No recent orders available.</p>
+        {% endif %}
+    </article>
+</section>
+<<<<<<< HEAD
+=======
+=======
+>>>>>>> 307902df8d7db18a550e380d547538169d55f38e
+>>>>>>> 93000c68efa063a5c634abbf7d106ef0859a851e
+{% endblock %}
