@@ -1,7 +1,6 @@
 {% extends "base.html" %}
 
 {% block content %}
-<<<<<<< HEAD
 <section class="card split-layout">
     <div>
         <p class="eyebrow">Selected Item</p>
@@ -15,16 +14,6 @@
     <form method="POST" class="form-panel">
         <label for="customer_name">Customer Name</label>
         <input type="text" id="customer_name" name="customer_name" minlength="2" required>
-=======
-<section class="card">
-    <h2>Place Order</h2>
-    <p><strong>Item:</strong> {{ item.name }} ({{ item.category }})</p>
-    <p><strong>Price:</strong> ${{ "%.2f"|format(item.price) }}</p>
-
-    <form method="POST">
-        <label for="customer_name">Customer Name</label>
-        <input type="text" id="customer_name" name="customer_name" required>
->>>>>>> 307902df8d7db18a550e380d547538169d55f38e
 
         <label for="quantity">Quantity</label>
         <input type="number" id="quantity" name="quantity" min="1" value="1" required>
