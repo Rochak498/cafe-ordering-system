@@ -115,6 +115,7 @@ def menu():
 
 
 @app.route("/order/<int:item_id>", methods=["GET", "POST"])
+@login_required
 def create_order(item_id):
     with closing(get_db_connection()) as conn:
         item = conn.execute("SELECT * FROM menu_items WHERE id = ?", (item_id,)).fetchone()
@@ -199,6 +200,7 @@ def track_order(order_code=None):
 
 
 @app.route("/orders")
+@login_required
 def orders():
     status_filter = request.args.get("status", "All")
     search = request.args.get("search", "").strip()
@@ -285,6 +287,7 @@ def export_orders():
 
 
 @app.route("/dashboard")
+@login_required
 def dashboard():
     with closing(get_db_connection()) as conn:
         total_orders = conn.execute("SELECT COUNT(*) AS count FROM orders").fetchone()["count"]
@@ -356,6 +359,57 @@ def login():
         flash("Invalid username or password.", "error")
 
     return render_template("login.html")
+
+@app.route("/edit_order/<int:order_id>", methods=["GET", "POST"])
+@login_required
+def edit_order(order_id):
+    if not login_required():
+        flash("Please log in to access staff features.", "error")
+        return redirect(url_for("login"))
+
+    with closing(get_db_connection()) as conn:
+        order = conn.execute(
+            "SELECT * FROM orders WHERE id = ?",
+            (order_id,)
+        ).fetchone()
+
+    if not order:
+        flash("Order not found.", "error")
+        return redirect(url_for("orders"))
+
+    if request.method == "POST":
+        customer_name = request.form.get("customer_name", "").strip()
+        item_name = request.form.get("item_name", "").strip()
+        quantity = int(request.form.get("quantity", 1))
+        unit_price = float(request.form.get("unit_price", 0))
+        notes = request.form.get("notes", "").strip()
+        total_price = quantity * unit_price
+
+        with closing(get_db_connection()) as conn:
+            conn.execute("""
+                UPDATE orders
+                SET customer_name = ?, item_name = ?, quantity = ?, unit_price = ?, total_price = ?, notes = ?
+                WHERE id = ?
+            """, (customer_name, item_name, quantity, unit_price, total_price, notes, order_id))
+            conn.commit()
+
+        flash("Order updated successfully.", "success")
+        return redirect(url_for("orders"))
+
+    return render_template("edit_order.html", order=order)
+
+@app.route("/delete_order/<int:order_id>", methods=["POST"])
+def delete_order(order_id):
+    if not login_required():
+        flash("Please log in to access staff features.", "error")
+        return redirect(url_for("login"))
+
+    with closing(get_db_connection()) as conn:
+        conn.execute("DELETE FROM orders WHERE id = ?", (order_id,))
+        conn.commit()
+
+    flash("Order deleted successfully.", "success")
+    return redirect(url_for("orders"))
 
 
 @app.route("/logout")
