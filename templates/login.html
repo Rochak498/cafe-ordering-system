@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="card split-layout">
+    <div>
+        <p class="eyebrow">Role-Based Access</p>
+        <h2>Staff Login</h2>
+        <p>Staff and the café owner must log in before accessing the order queue, menu administration, dashboard, and exports.</p>
+        <p class="muted">Demo accounts: staff / staff123 and admin / admin123</p>
+    </div>
+    <form method="POST" class="form-panel">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" required>
+
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required>
+
+        <button type="submit">Login</button>
+    </form>
+</section>
+{% endblock %}

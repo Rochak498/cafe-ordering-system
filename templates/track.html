@@ -1,10 +1,6 @@
 {% extends "base.html" %}
 
 {% block content %}
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> 93000c68efa063a5c634abbf7d106ef0859a851e
 <section class="card split-layout">
     <div>
         <p class="eyebrow">Customer Order Tracking</p>
@@ -12,14 +8,6 @@
         <p>Enter your order code to check the current preparation status.</p>
     </div>
     <form method="POST" class="form-panel">
-<<<<<<< HEAD
-=======
-=======
-<section class="card">
-    <h2>Track Your Order</h2>
-    <form method="POST">
->>>>>>> 307902df8d7db18a550e380d547538169d55f38e
->>>>>>> 93000c68efa063a5c634abbf7d106ef0859a851e
         <label for="order_code">Order Code</label>
         <input type="text" id="order_code" name="order_code" value="{{ order_code or '' }}" placeholder="Enter your order code" required>
         <button type="submit">Track Order</button>
@@ -29,10 +17,6 @@
 {% if order %}
 <section class="card">
     <h3>Order Details</h3>
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> 93000c68efa063a5c634abbf7d106ef0859a851e
     <div class="details-grid">
         <div><strong>Order Code:</strong> {{ order.order_code }}</div>
         <div><strong>Customer:</strong> {{ order.customer_name }}</div>
@@ -52,20 +36,6 @@
             Your order is ready or completed.
         {% endif %}
     </p>
-<<<<<<< HEAD
-=======
-=======
-    <p><strong>Order Code:</strong> {{ order.order_code }}</p>
-    <p><strong>Customer:</strong> {{ order.customer_name }}</p>
-    <p><strong>Item:</strong> {{ order.item_name }}</p>
-    <p><strong>Quantity:</strong> {{ order.quantity }}</p>
-    <p><strong>Total:</strong> ${{ "%.2f"|format(order.total_price) }}</p>
-    <p><strong>Status:</strong> <span class="status-badge status-{{ order.status|lower }}">{{ order.status }}</span></p>
-    {% if order.notes %}
-    <p><strong>Notes:</strong> {{ order.notes }}</p>
-    {% endif %}
->>>>>>> 307902df8d7db18a550e380d547538169d55f38e
->>>>>>> 93000c68efa063a5c634abbf7d106ef0859a851e
 </section>
 {% endif %}
 {% endblock %}

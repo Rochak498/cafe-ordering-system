@@ -5,10 +5,19 @@ DB_PATH = "database.db"
 MENU_SEED = [
     ("Coffee", "Latte", 5.50, 1),
     ("Coffee", "Cappuccino", 5.20, 1),
+    ("Coffee", "Flat White", 5.30, 1),
     ("Cold Drinks", "Iced Coffee", 6.00, 1),
+    ("Cold Drinks", "Iced Chocolate", 6.20, 1),
     ("Food", "Chicken Wrap", 9.50, 1),
+    ("Food", "Veggie Toastie", 8.50, 1),
     ("Food", "Banana Bread", 4.80, 1),
     ("Dessert", "Blueberry Muffin", 4.50, 1),
+    ("Dessert", "Chocolate Brownie", 5.00, 1),
+]
+
+USER_SEED = [
+    ("staff", "staff123", "Staff Member", "staff"),
+    ("admin", "admin123", "Cafe Owner", "admin"),
 ]
 
 
@@ -37,7 +46,6 @@ cur.execute(
     """
 )
 
-# Lightweight migration for older database files.
 existing_order_columns = column_names(conn, "orders")
 if "order_code" not in existing_order_columns:
     cur.execute("ALTER TABLE orders ADD COLUMN order_code TEXT")
@@ -56,12 +64,23 @@ cur.execute(
     """
 )
 
-menu_count = cur.execute("SELECT COUNT(*) FROM menu_items").fetchone()[0]
-if menu_count == 0:
-    cur.executemany(
-        "INSERT INTO menu_items (category, name, price, is_available) VALUES (?, ?, ?, ?)",
-        MENU_SEED,
+cur.execute(
+    """
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        display_name TEXT NOT NULL,
+        role TEXT NOT NULL
     )
+    """
+)
+
+if cur.execute("SELECT COUNT(*) FROM menu_items").fetchone()[0] == 0:
+    cur.executemany("INSERT INTO menu_items (category, name, price, is_available) VALUES (?, ?, ?, ?)", MENU_SEED)
+
+if cur.execute("SELECT COUNT(*) FROM users").fetchone()[0] == 0:
+    cur.executemany("INSERT INTO users (username, password, display_name, role) VALUES (?, ?, ?, ?)", USER_SEED)
 
 conn.commit()
 conn.close()

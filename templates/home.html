@@ -2,20 +2,20 @@
 
 {% block content %}
 <section class="hero card">
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> 93000c68efa063a5c634abbf7d106ef0859a851e
     <div>
-        <p class="eyebrow">Iteration 1 MVP</p>
-        <h2>QR-Based Café Ordering and Staff Order Management</h2>
+        <p class="eyebrow">Iteration 2 Product</p>
+        <h2>Role-Based Café Ordering and Management System</h2>
         <p>
-            This prototype addresses the café’s core business problems by providing digital menu access,
-            structured order placement, order tracking, and a staff-facing order queue with dashboard reporting.
+            This iteration extends the ordering MVP with role-based staff access, menu administration,
+            order editing/cancellation, improved reporting, and a more realistic café workflow.
         </p>
         <div class="hero-actions">
-            <a class="button-link" href="{{ url_for('menu') }}">Browse Menu</a>
-            <a class="button-link secondary" href="{{ url_for('orders') }}">Open Staff Queue</a>
+            <a class="button-link" href="{{ url_for('menu') }}">Browse Customer Menu</a>
+            {% if current_user %}
+                <a class="button-link secondary" href="{{ url_for('orders') }}">Open Staff Queue</a>
+            {% else %}
+                <a class="button-link secondary" href="{{ url_for('login') }}">Staff Login</a>
+            {% endif %}
         </div>
     </div>
     <div class="hero-stats">
@@ -27,68 +27,26 @@
             <span class="stat-value">{{ total_orders }}</span>
             <span class="stat-label">Orders recorded</span>
         </div>
-<<<<<<< HEAD
-=======
-=======
-    <h2>QR-Based Café Ordering MVP</h2>
-    <p>
-        This prototype supports the core Project A workflow: customer menu access,
-        digital order placement, order tracking, and staff order management.
-    </p>
-    <div class="hero-actions">
-        <a class="button-link" href="{{ url_for('menu') }}">Customer Menu</a>
-        <a class="button-link secondary" href="{{ url_for('orders') }}">Staff Order Queue</a>
->>>>>>> 307902df8d7db18a550e380d547538169d55f38e
->>>>>>> 93000c68efa063a5c634abbf7d106ef0859a851e
     </div>
 </section>
 
 <section class="card info-grid">
     <div>
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> 93000c68efa063a5c634abbf7d106ef0859a851e
         <h3>Customer workflow</h3>
         <ol>
-            <li>Open the menu through a QR code or direct link.</li>
-            <li>Choose an available menu item.</li>
-            <li>Place the order and receive an order code.</li>
-<<<<<<< HEAD
-=======
-=======
-        <h3>Customer flow</h3>
-        <ol>
-            <li>Scan QR code or open the menu link.</li>
-            <li>Browse available items.</li>
-            <li>Place an order and receive an order code.</li>
->>>>>>> 307902df8d7db18a550e380d547538169d55f38e
->>>>>>> 93000c68efa063a5c634abbf7d106ef0859a851e
-            <li>Track progress using the order code.</li>
+            <li>Browse the menu through the web app or QR link.</li>
+            <li>Search/filter items and place an order.</li>
+            <li>Receive a unique order code.</li>
+            <li>Track order progress using the code.</li>
         </ol>
     </div>
     <div>
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> 93000c68efa063a5c634abbf7d106ef0859a851e
-        <h3>Staff workflow</h3>
+        <h3>Staff/owner workflow</h3>
         <ol>
-            <li>Review incoming orders in the staff queue.</li>
-            <li>Update the order status as work progresses.</li>
-            <li>Use the dashboard to monitor operational metrics.</li>
-            <li>Export order data for review if required.</li>
-<<<<<<< HEAD
-=======
-=======
-        <h3>Staff flow</h3>
-        <ol>
-            <li>Open the staff order queue.</li>
-            <li>Review incoming orders.</li>
-            <li>Update order status.</li>
-            <li>Monitor metrics in the dashboard.</li>
->>>>>>> 307902df8d7db18a550e380d547538169d55f38e
->>>>>>> 93000c68efa063a5c634abbf7d106ef0859a851e
+            <li>Log in using staff credentials.</li>
+            <li>Review, search, edit, cancel, or update orders.</li>
+            <li>Maintain menu availability.</li>
+            <li>Use dashboard insights and CSV export for operations.</li>
         </ol>
     </div>
 </section>

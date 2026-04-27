@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="card">
+    <div class="section-head">
+        <div>
+            <p class="eyebrow">Owner / Staff Maintenance</p>
+            <h2>Menu Administration</h2>
+            <p>Add new menu items and control item availability for customer ordering.</p>
+        </div>
+    </div>
+
+    <form method="POST" class="filter-grid">
+        <div>
+            <label for="category">Category</label>
+            <input id="category" name="category" placeholder="Coffee, Food, Dessert" required>
+        </div>
+        <div>
+            <label for="name">Item name</label>
+            <input id="name" name="name" placeholder="e.g. Mocha" required>
+        </div>
+        <div>
+            <label for="price">Price</label>
+            <input id="price" name="price" type="number" step="0.01" min="0" required>
+        </div>
+        <div class="filter-actions">
+            <button type="submit">Add Item</button>
+        </div>
+    </form>
+</section>
+
+<section class="card">
+    <h3>Current Menu Items</h3>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th>Name</th>
+                    <th>Price</th>
+                    <th>Availability</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td>{{ item.category }}</td>
+                    <td>{{ item.name }}</td>
+                    <td>${{ "%.2f"|format(item.price) }}</td>
+                    <td>{% if item.is_available %}Available{% else %}Hidden{% endif %}</td>
+                    <td>
+                        <form method="POST" action="{{ url_for('toggle_menu_item', item_id=item.id) }}">
+                            <button type="submit">{% if item.is_available %}Hide{% else %}Show{% endif %}</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

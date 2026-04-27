@@ -12,10 +12,16 @@
             <h1>Daxxi140 Café Ordering System</h1>
             <nav>
                 <a href="{{ url_for('home') }}">Home</a>
-                <a href="{{ url_for('menu') }}">Menu</a>
+                <a href="{{ url_for('menu') }}">Customer Menu</a>
                 <a href="{{ url_for('track_order') }}">Track Order</a>
-                <a href="{{ url_for('orders') }}">Staff Orders</a>
-                <a href="{{ url_for('dashboard') }}">Dashboard</a>
+                {% if current_user %}
+                    <a href="{{ url_for('orders') }}">Staff Queue</a>
+                    <a href="{{ url_for('admin_menu') }}">Menu Admin</a>
+                    <a href="{{ url_for('dashboard') }}">Dashboard</a>
+                    <a href="{{ url_for('logout') }}">Logout ({{ current_user.display_name }})</a>
+                {% else %}
+                    <a href="{{ url_for('login') }}">Staff Login</a>
+                {% endif %}
             </nav>
         </div>
     </header>
@@ -33,7 +39,7 @@
     </main>
 
     <footer class="site-footer">
-        <p>Team X Project MVP aligned with Jira and Confluence </p>
+        <p>Iteration 2 Product — Agile Sprint 2 aligned with Jira and Confluence</p>
     </footer>
 </body>
 </html>
