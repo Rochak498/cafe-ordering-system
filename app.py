@@ -6,6 +6,11 @@ import sqlite3
 from contextlib import closing
 import secrets
 
+from flask import Flask, render_template, request, redirect, url_for, flash, session
+from werkzeug.security import check_password_hash
+import sqlite3
+from contextlib import closing
+
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "change_this_before_production")
 DB_PATH = "database.db"
@@ -58,6 +63,9 @@ def prepare_order_rows(rows):
         order["estimated_minutes"] = estimate_prep_time(order["quantity"], order["status"])
         prepared.append(order)
     return prepared
+
+def login_required():
+    return "user_id" in session
 
 
 @app.route("/")
@@ -326,6 +334,35 @@ def dashboard():
         recent_orders=recent_orders,
     )
 
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "").strip()
+
+        with closing(get_db_connection()) as conn:
+            user = conn.execute(
+                "SELECT * FROM users WHERE username = ?",
+                (username,)
+            ).fetchone()
+
+        if user and check_password_hash(user["password_hash"], password):
+            session["user_id"] = user["id"]
+            session["username"] = user["username"]
+            session["role"] = user["role"]
+            flash("Login successful.", "success")
+            return redirect(url_for("orders"))
+
+        flash("Invalid username or password.", "error")
+
+    return render_template("login.html")
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    flash("Logged out successfully.", "success")
+    return redirect(url_for("login"))
 
 if __name__ == "__main__":
     app.run(debug=True)
