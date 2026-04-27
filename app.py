@@ -411,6 +411,37 @@ def delete_order(order_id):
     flash("Order deleted successfully.", "success")
     return redirect(url_for("orders"))
 
+@app.route("/feedback", methods=["GET", "POST"])
+def feedback():
+    if request.method == "POST":
+        order_code = request.form.get("order_code", "").strip()
+        rating = request.form.get("rating", "").strip()
+        comment = request.form.get("comment", "").strip()
+
+        if not order_code or not rating:
+            flash("Order code and rating are required.", "error")
+            return redirect(url_for("feedback"))
+
+        with closing(get_db_connection()) as conn:
+            order = conn.execute(
+                "SELECT * FROM orders WHERE order_code = ?",
+                (order_code,)
+            ).fetchone()
+
+            if not order:
+                flash("Order code not found.", "error")
+                return redirect(url_for("feedback"))
+
+            conn.execute("""
+                INSERT INTO feedback (order_code, rating, comment)
+                VALUES (?, ?, ?)
+            """, (order_code, int(rating), comment))
+            conn.commit()
+
+        flash("Thank you for your feedback.", "success")
+        return redirect(url_for("feedback"))
+
+    return render_template("feedback.html")
 
 @app.route("/logout")
 def logout():

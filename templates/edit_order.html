@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="card">
+    <h2>Edit Order</h2>
+
+    <form method="POST">
+        <label>Customer Name</label>
+        <input type="text" name="customer_name" value="{{ order.customer_name }}" required>
+
+        <label>Item Name</label>
+        <input type="text" name="item_name" value="{{ order.item_name }}" required>
+
+        <label>Quantity</label>
+        <input type="number" name="quantity" value="{{ order.quantity }}" min="1" required>
+
+        <label>Unit Price</label>
+        <input type="number" name="unit_price" value="{{ order.unit_price }}" step="0.01" min="0" required>
+
+        <label>Notes</label>
+        <textarea name="notes">{{ order.notes }}</textarea>
+
+        <button type="submit">Update Order</button>
+    </form>
+</section>
+{% endblock %}

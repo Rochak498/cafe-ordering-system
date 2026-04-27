@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="card">
+    <h2>Customer Feedback</h2>
+
+    <form method="POST">
+        <label>Order Code</label>
+        <input type="text" name="order_code" required>
+
+        <label>Rating</label>
+        <select name="rating" required>
+            <option value="">Select rating</option>
+            <option value="5">5 - Excellent</option>
+            <option value="4">4 - Good</option>
+            <option value="3">3 - Average</option>
+            <option value="2">2 - Poor</option>
+            <option value="1">1 - Very Poor</option>
+        </select>
+
+        <label>Comment</label>
+        <textarea name="comment"></textarea>
+
+        <button type="submit">Submit Feedback</button>
+    </form>
+</section>
+{% endblock %}
