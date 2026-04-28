@@ -16,7 +16,7 @@ STATUS_HELP_TEXT = {
     "Pending": "Your order has been received and is waiting to be prepared.",
     "Preparing": "Our staff are currently preparing your order.",
     "Ready": "Your order is ready for collection.",
-    "Completed": "Your order has been completed. Thank you for visiting Daxxi140 Café.",
+    "Completed": "Your order has been completed. Thank you for visiting Daxxi140 Cafe.",
     "Cancelled": "This order has been cancelled. Please speak with staff if this was unexpected.",
 }
 
