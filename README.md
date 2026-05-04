@@ -1,50 +1,49 @@
-# Daxxi140 Café Ordering System – Iteration 1 MVP
+# Daxxi140 Café Ordering System — Iteration 2
 
-## Project Overview
-This web application was developed for ISYS3007 Project A Assessment 2. It delivers the first usable product increment for the Daxxi140 Café project.
+## Overview
+This is the Iteration 2 product for ISYS3008 Project B. It extends the Iteration 1 MVP by adding role-based staff access, menu administration, order editing/cancellation, enhanced reporting, and better operational controls.
 
-## Implemented Features
-- Customer menu browsing with category and search filters
-- Order placement with generated order code
-- Customer order tracking page
-- Staff order queue with search and status filtering
+## Main Features
+- Customer menu browsing with search and category filter
+- Customer order placement with unique order code generation
+- Customer order tracking
+- Staff login for protected operational pages
+- Staff order queue with search/status filtering
 - Order status updates
-- Dashboard with summary metrics, top items, and recent orders
-- CSV export for order records
+- Edit order details
+- Cancel orders
+- Menu administration: add items and toggle availability
+- Dashboard: total orders, revenue, average value, status counts, category sales, daily summary, hourly summary, recent orders
+- CSV order export
 
-## Technology Stack
+## Demo Accounts
+- Username: `staff` / Password: `staff123`
+- Username: `admin` / Password: `admin123`
+
+## Technologies
 - Python 3.x
-- Flask 3.0.2
+- Flask
 - SQLite
 - HTML5
 - CSS3
 
-## How to Run
-1. Create a virtual environment if desired.
-2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. Initialise the database:
-   ```bash
-   python init_db.py
-   ```
-4. Start the application:
-   ```bash
-   python app.py
-   ```
-5. Open the browser at:
-   `http://127.0.0.1:5000`
+## Setup
+```bash
+pip install -r requirements.txt
+python init_db.py
+python app.py
+```
 
-## Suggested Demo Flow
-1. Open home page
-2. Browse menu
-3. Place an order
-4. Track the order using the order code
-5. Open staff queue and update status
-6. Open dashboard and review metrics
-7. Export order records to CSV
+Open:
+```text
+http://127.0.0.1:5000
+```
 
 ## Iteration Tag
-Tag this version in Git as:
-`iteration-1`
+Tag the final commit as:
+```text
+iteration-2
+```
+
+## Notes for Tutor
+Run `init_db.py` before running the app. If using an old database from Iteration 1, delete `database.db` and run `init_db.py` again for a clean Iteration 2 demo database.
