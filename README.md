@@ -1,4 +1,4 @@
-# Daxxi140 Café Ordering System — Iteration 2
+# Daxxi140 Cafe Ordering System — Iteration 2
 
 ## Overview
 This is the Iteration 2 product for ISYS3008 Project B. It extends the Iteration 1 MVP by adding role-based staff access, menu administration, order editing/cancellation, enhanced reporting, and better operational controls.
