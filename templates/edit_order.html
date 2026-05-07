@@ -1,26 +1,33 @@
 {% extends "base.html" %}
 
 {% block content %}
-<section class="card">
-    <h2>Edit Order</h2>
+<section class="card split-layout">
+    <div>
+        <p class="eyebrow">Staff Order Management</p>
+        <h2>Edit Order {{ order.order_code }}</h2>
+        <p><strong>Item:</strong> {{ order.item_name }}</p>
+        <p><strong>Unit price:</strong> ${{ "%.2f"|format(order.unit_price) }}</p>
+        <p class="muted">Editing is restricted to staff users to support role-based control.</p>
+    </div>
+    <form method="POST" class="form-panel">
+        <label for="customer_name">Customer Name</label>
+        <input type="text" id="customer_name" name="customer_name" value="{{ order.customer_name }}" minlength="2" required>
 
-    <form method="POST">
-        <label>Customer Name</label>
-        <input type="text" name="customer_name" value="{{ order.customer_name }}" required>
+        <label for="quantity">Quantity</label>
+        <input type="number" id="quantity" name="quantity" min="1" max="50" value="{{ order.quantity }}" required>
 
-        <label>Item Name</label>
-        <input type="text" name="item_name" value="{{ order.item_name }}" required>
+        <label for="notes">Order Notes</label>
+        <textarea id="notes" name="notes" rows="4">{{ order.notes or '' }}</textarea>
 
-        <label>Quantity</label>
-        <input type="number" name="quantity" value="{{ order.quantity }}" min="1" required>
+        <label for="status">Status</label>
+        <select id="status" name="status">
+            {% for status in valid_statuses %}
+            <option value="{{ status }}" {% if order.status == status %}selected{% endif %}>{{ status }}</option>
+            {% endfor %}
+        </select>
 
-        <label>Unit Price</label>
-        <input type="number" name="unit_price" value="{{ order.unit_price }}" step="0.01" min="0" required>
-
-        <label>Notes</label>
-        <textarea name="notes">{{ order.notes }}</textarea>
-
-        <button type="submit">Update Order</button>
+        <button type="submit">Save Changes</button>
+        <a class="button-link secondary" href="{{ url_for('orders') }}">Back to Queue</a>
     </form>
 </section>
 {% endblock %}
