@@ -71,6 +71,19 @@
 </section>
 
 <section class="card">
+    <h3>Active Table Slots</h3>
+    {% if active_tables %}
+    <div class="table-chip-grid">
+        {% for table in active_tables %}
+        <span class="table-chip">Table {{ table.table_number }} — {{ table.order_count }} active order(s)</span>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p>No active dine-in table orders at the moment.</p>
+    {% endif %}
+</section>
+
+<section class="card">
     <h3>Recent Orders</h3>
     {% if recent_orders %}
     <div class="recent-list">

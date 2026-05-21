@@ -6,11 +6,11 @@
         <div>
             <p class="eyebrow">Owner / Staff Maintenance</p>
             <h2>Menu Administration</h2>
-            <p>Add new menu items and control item availability for customer ordering.</p>
+            <p>Add realistic menu items with description and image path/URL, then control item availability for customer ordering.</p>
         </div>
     </div>
 
-    <form method="POST" class="filter-grid">
+     <form method="POST" class="admin-menu-form">
         <div>
             <label for="category">Category</label>
             <input id="category" name="category" placeholder="Coffee, Food, Dessert" required>
@@ -23,20 +23,30 @@
             <label for="price">Price</label>
             <input id="price" name="price" type="number" step="0.01" min="0" required>
         </div>
+        <div>
+            <label for="image_url">Image path or URL</label>
+            <input id="image_url" name="image_url" placeholder="images/latte.svg or https://...">
+        </div>
+        <div class="wide-field">
+            <label for="description">Description</label>
+            <textarea id="description" name="description" rows="3" placeholder="Describe taste, ingredients, or serving style" required></textarea>
+        </div>
         <div class="filter-actions">
             <button type="submit">Add Item</button>
         </div>
     </form>
-</section>
+    </section>
 
-<section class="card">
+    <section class="card">
     <h3>Current Menu Items</h3>
     <div class="table-wrap">
         <table>
             <thead>
                 <tr>
+                    <th>Image</th>
                     <th>Category</th>
                     <th>Name</th>
+                    <th>Description</th>
                     <th>Price</th>
                     <th>Availability</th>
                     <th>Action</th>
@@ -45,8 +55,10 @@
             <tbody>
                 {% for item in items %}
                 <tr>
+                    <td><img class="thumb" src="{{ menu_image_src(item.image_url) }}" alt="{{ item.name }}"></td>
                     <td>{{ item.category }}</td>
                     <td>{{ item.name }}</td>
+                    <td class="left-text">{{ item.description }}</td>
                     <td>${{ "%.2f"|format(item.price) }}</td>
                     <td>{% if item.is_available %}Available{% else %}Hidden{% endif %}</td>
                     <td>
@@ -61,3 +73,5 @@
     </div>
 </section>
 {% endblock %}
+
+    

@@ -13,11 +13,16 @@
         <label for="customer_name">Customer Name</label>
         <input type="text" id="customer_name" name="customer_name" value="{{ order.customer_name }}" minlength="2" required>
 
+        <label for="table_number">Table / Service Option</label>
+        <select id="table_number" name="table_number" required>
+            <option value="Takeaway" {% if order.table_number == 'Takeaway' %}selected{% endif %}>Takeaway</option>
+            {% for number in range(1, 21) %}
+            <option value="{{ number }}" {% if order.table_number == number|string %}selected{% endif %}>Table {{ number }}</option>
+            {% endfor %}
+        </select>
+
         <label for="quantity">Quantity</label>
         <input type="number" id="quantity" name="quantity" min="1" max="50" value="{{ order.quantity }}" required>
-
-        <label for="notes">Order Notes</label>
-        <textarea id="notes" name="notes" rows="4">{{ order.notes or '' }}</textarea>
 
         <label for="status">Status</label>
         <select id="status" name="status">
@@ -25,6 +30,9 @@
             <option value="{{ status }}" {% if order.status == status %}selected{% endif %}>{{ status }}</option>
             {% endfor %}
         </select>
+
+        <label for="notes">Order Notes</label>
+        <textarea id="notes" name="notes" rows="4">{{ order.notes or '' }}</textarea>
 
         <button type="submit">Save Changes</button>
         <a class="button-link secondary" href="{{ url_for('orders') }}">Back to Queue</a>
