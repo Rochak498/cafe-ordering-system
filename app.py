@@ -448,7 +448,7 @@ def qr_menu_svg():
     img = qrcode.make(app_url, image_factory=SvgImage)
     output = io.BytesIO()
     img.save(output)
-    return Response(output.getvalue(), mimetype="image/jpg+xml")
+    return Response(output.getvalue(), mimetype="image/svg+xml")
 
 
 @app.route("/dashboard")
