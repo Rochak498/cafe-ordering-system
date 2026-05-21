@@ -3,16 +3,16 @@ import sqlite3
 DB_PATH = "database.db"
 
 MENU_SEED = [
-    ("Coffee", "Latte", 5.50, "Smooth espresso with steamed milk and a light foam finish.", "images/latte.svg", 1),
-    ("Coffee", "Cappuccino", 5.20, "Classic espresso topped with thick foam and cocoa dusting.", "images/cappuccino.svg", 1),
-    ("Coffee", "Flat White", 5.30, "Rich espresso blended with velvety microfoam.", "images/flat_white.svg", 1),
-    ("Cold Drinks", "Iced Coffee", 6.00, "Chilled espresso over ice with milk and optional sweetness.", "images/iced_coffee.svg", 1),
-    ("Cold Drinks", "Iced Chocolate", 6.20, "Cold chocolate drink served over ice with creamy texture.", "images/iced_chocolate.svg", 1),
-    ("Food", "Chicken Wrap", 9.50, "Grilled chicken, fresh salad and sauce wrapped for quick lunch.", "images/chicken_wrap.svg", 1),
-    ("Food", "Veggie Toastie", 8.50, "Toasted sandwich with vegetables, cheese and savoury filling.", "images/veggie_toastie.svg", 1),
-    ("Food", "Banana Bread", 4.80, "Moist banana bread slice, ideal with coffee.", "images/banana_bread.svg", 1),
-    ("Dessert", "Blueberry Muffin", 4.50, "Soft muffin with blueberry pieces and a lightly sweet finish.", "images/blueberry_muffin.svg", 1),
-    ("Dessert", "Chocolate Brownie", 5.00, "Dense chocolate brownie with a rich cocoa flavour.", "images/brownie.svg", 1),
+    ("Coffee", "Latte", 5.50, "Smooth espresso with steamed milk and a light foam finish.", "images/latte.jpg", 1),
+    ("Coffee", "Cappuccino", 5.20, "Classic espresso topped with thick foam and cocoa dusting.", "images/cappuccino.jpg", 1),
+    ("Coffee", "Flat White", 5.30, "Rich espresso blended with velvety microfoam.", "images/flat_white.jpg", 1),
+    ("Cold Drinks", "Iced Coffee", 6.00, "Chilled espresso over ice with milk and optional sweetness.", "images/iced_coffee.jpg", 1),
+    ("Cold Drinks", "Iced Chocolate", 6.20, "Cold chocolate drink served over ice with creamy texture.", "images/iced_chocolate.jpg", 1),
+    ("Food", "Chicken Wrap", 9.50, "Grilled chicken, fresh salad and sauce wrapped for quick lunch.", "images/chicken_wrap.jpg", 1),
+    ("Food", "Veggie Toastie", 8.50, "Toasted sandwich with vegetables, cheese and savoury filling.", "images/veggie_toastie.jpg", 1),
+    ("Food", "Banana Bread", 4.80, "Moist banana bread slice, ideal with coffee.", "images/banana_bread.jpg", 1),
+    ("Dessert", "Blueberry Muffin", 4.50, "Soft muffin with blueberry pieces and a lightly sweet finish.", "images/blueberry_muffin.jpg", 1),
+    ("Dessert", "Chocolate Brownie", 5.00, "Dense chocolate brownie with a rich cocoa flavour.", "images/brownie.jpg", 1),
 ]
 USER_SEED = [
     ("staff", "staff123", "Staff Member", "staff"),

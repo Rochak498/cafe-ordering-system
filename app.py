@@ -45,7 +45,7 @@ def current_user():
 def menu_image_src(image_url: str) -> str:
     """Return a usable image URL for menu cards. Supports external URLs and static image paths."""
     if not image_url:
-        return url_for("static", filename="images/fallback.svg")
+        return url_for("static", filename="images/fallback.jpg")
     parsed = urlparse(image_url)
     if parsed.scheme in {"http", "https"}:
         return image_url
@@ -402,7 +402,7 @@ def admin_menu():
         name = request.form.get("name", "").strip()
         price_raw = request.form.get("price", "").strip()
         description = request.form.get("description", "").strip()
-        image_url = request.form.get("image_url", "").strip() or "images/fallback.svg"
+        image_url = request.form.get("image_url", "").strip() or "images/fallback.jpg"
         if not category or not name or not price_raw or not description:
             flash("Category, name , price and description are required.", "error")
             return redirect(url_for("admin_menu"))
@@ -448,7 +448,7 @@ def qr_menu_svg():
     img = qrcode.make(app_url, image_factory=SvgImage)
     output = io.BytesIO()
     img.save(output)
-    return Response(output.getvalue(), mimetype="image/svg+xml")
+    return Response(output.getvalue(), mimetype="image/jpg+xml")
 
 
 @app.route("/dashboard")
