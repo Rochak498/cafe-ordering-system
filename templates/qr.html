@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="card split-layout">
+    <div>
+        <p class="eyebrow">QR Ordering Access</p>
+        <h2>Scan to Open Customer Menu</h2>
+        <p>This QR code links customers directly to the café menu page. In the café, this can be printed and placed on tables, counters, or signs.</p>
+        <p><strong>Menu URL:</strong> {{ app_url }}</p>
+        <a class="button-link" href="{{ url_for('qr_menu_svg') }}" target="_blank">Open QR Image</a>
+    </div>
+    <div class="qr-panel">
+        <img src="{{ url_for('qr_menu_svg') }}" alt="QR code linking to customer menu">
+        <p class="muted">Demo note: when running locally, scan this using a device on the same network or show it in the recorded demo as QR functionality evidence.</p>
+    </div>
+</section>
+{% endblock %}
