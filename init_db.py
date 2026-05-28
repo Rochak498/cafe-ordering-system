@@ -38,8 +38,19 @@ cur.execute(
         item_name TEXT NOT NULL,
         quantity INTEGER NOT NULL,
         unit_price REAL NOT NULL,
+        size_option TEXT NOT NULL DEFAULT 'Regular',
+        milk_option TEXT NOT NULL DEFAULT 'Full Cream',
+        extras TEXT NOT NULL DEFAULT '',
+        modifiers_total REAL NOT NULL DEFAULT 0,
+        subtotal REAL NOT NULL DEFAULT 0,
+        service_fee REAL NOT NULL DEFAULT 0,
+        gst_amount REAL NOT NULL DEFAULT 0,
         total_price REAL NOT NULL,
         notes TEXT,
+        customer_phone TEXT NOT NULL DEFAULT '',
+        payment_method TEXT NOT NULL DEFAULT 'Pay at Counter',
+        payment_status TEXT NOT NULL DEFAULT 'Unpaid',
+        payment_reference TEXT NOT NULL DEFAULT '',
         status TEXT NOT NULL DEFAULT 'Pending',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
@@ -53,6 +64,29 @@ if "notes" not in existing_order_columns:
     cur.execute("ALTER TABLE orders ADD COLUMN notes TEXT")
 if "table_number" not in existing_order_columns:
     cur.execute("ALTER TABLE orders ADD COLUMN table_number TEXT NOT NULL DEFAULT 'Takeaway'")
+if "customer_phone" not in existing_order_columns:
+    cur.execute("ALTER TABLE orders ADD COLUMN customer_phone TEXT NOT NULL DEFAULT ''")
+if "payment_method" not in existing_order_columns:
+    cur.execute("ALTER TABLE orders ADD COLUMN payment_method TEXT NOT NULL DEFAULT 'Pay at Counter'")
+if "payment_status" not in existing_order_columns:
+    cur.execute("ALTER TABLE orders ADD COLUMN payment_status TEXT NOT NULL DEFAULT 'Unpaid'")
+if "size_option" not in existing_order_columns:
+    cur.execute("ALTER TABLE orders ADD COLUMN size_option TEXT NOT NULL DEFAULT 'Regular'")
+if "milk_option" not in existing_order_columns:
+    cur.execute("ALTER TABLE orders ADD COLUMN milk_option TEXT NOT NULL DEFAULT 'Full Cream'")
+if "extras" not in existing_order_columns:
+    cur.execute("ALTER TABLE orders ADD COLUMN extras TEXT NOT NULL DEFAULT ''")
+if "modifiers_total" not in existing_order_columns:
+    cur.execute("ALTER TABLE orders ADD COLUMN modifiers_total REAL NOT NULL DEFAULT 0")
+if "subtotal" not in existing_order_columns:
+    cur.execute("ALTER TABLE orders ADD COLUMN subtotal REAL NOT NULL DEFAULT 0")
+if "service_fee" not in existing_order_columns:
+    cur.execute("ALTER TABLE orders ADD COLUMN service_fee REAL NOT NULL DEFAULT 0")
+if "gst_amount" not in existing_order_columns:
+    cur.execute("ALTER TABLE orders ADD COLUMN gst_amount REAL NOT NULL DEFAULT 0")
+if "payment_reference" not in existing_order_columns:
+    cur.execute("ALTER TABLE orders ADD COLUMN payment_reference TEXT NOT NULL DEFAULT ''")
+
 
 cur.execute(
     """
@@ -85,6 +119,36 @@ cur.execute(
     )
     """
 )
+cur.execute(
+    """
+    CREATE TABLE IF NOT EXISTS feedback (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        order_code TEXT NOT NULL,
+        rating INTEGER NOT NULL,
+        comment TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """
+)
+
+cur.execute(
+    """
+    CREATE TABLE IF NOT EXISTS transactions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        transaction_ref TEXT UNIQUE NOT NULL,
+        order_code TEXT NOT NULL,
+        payment_method TEXT NOT NULL,
+        amount REAL NOT NULL,
+        surcharge_amount REAL NOT NULL DEFAULT 0,
+        payment_status TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """
+)
+
+# Backfill pricing columns for older orders if necessary.
+cur.execute("UPDATE orders SET subtotal = total_price WHERE subtotal = 0")
+cur.execute("UPDATE orders SET gst_amount = ROUND(total_price / 11, 2) WHERE gst_amount = 0")
 
 if cur.execute("SELECT COUNT(*) FROM menu_items").fetchone()[0] == 0:
     cur.executemany(

@@ -24,6 +24,38 @@ STATUS_HELP_TEXT = {
     "Cancelled": "This order has been cancelled. Please speak with staff if this was unexpected.",
 }
 
+MILK_OPTIONS = {
+    "Full Cream": 0.00,
+    "Skim": 0.00,
+    "Soy": 0.80,
+    "Oat": 0.80,
+    "Lactose Free": 0.80,
+    "Almond": 0.80,
+    "None / Not Applicable": 0.00,
+}
+
+SIZE_OPTIONS = {
+    "Small": -0.50,
+    "Regular": 0.00,
+    "Large": 1.00,
+}
+
+EXTRA_OPTIONS = {
+    "Extra Shot": 1.00,
+    "Vanilla Syrup": 0.70,
+    "Caramel Syrup": 0.70,
+    "Hazelnut Syrup": 0.70,
+    "Whipped Cream": 0.80,
+    "Gluten Free Bread": 1.00,
+}
+
+PAYMENT_METHODS = {
+    "Pay at Counter": {"surcharge_rate": 0.00, "paid_immediately": False},
+    "Cash": {"surcharge_rate": 0.00, "paid_immediately": True},
+    "EFTPOS/Card": {"surcharge_rate": 0.015, "paid_immediately": True},
+    "Apple Pay / Google Pay": {"surcharge_rate": 0.015, "paid_immediately": True},
+}
+
 
 def get_db_connection():
     conn = sqlite3.connect(DB_PATH)
@@ -53,7 +85,13 @@ def menu_image_src(image_url: str) -> str:
 
 @app.context_processor
 def inject_helpers():
-    return {"menu_image_src": menu_image_src}
+    return {
+        "menu_image_src": menu_image_src,
+        "milk_options": MILK_OPTIONS,
+        "size_options": SIZE_OPTIONS,
+        "extra_options": EXTRA_OPTIONS,
+        "payment_methods": PAYMENT_METHODS,
+        }
 
 def generate_order_code(length: int = 8) -> str:
     return secrets.token_hex(length // 2).upper()
@@ -81,6 +119,50 @@ def estimate_prep_time(quantity: int, status: str) -> int:
     }
     return adjustments.get(status, base)
 
+def normalise_extras(selected_extras):
+    """Return valid extras as a clean list and comma-separated label."""
+    if not selected_extras:
+        return [], ""
+    valid = [extra for extra in selected_extras if extra in EXTRA_OPTIONS]
+    return valid, ", ".join(valid)
+
+
+def calculate_order_pricing(base_price: float, quantity: int, size_option: str, milk_option: str, extras_list, payment_method: str):
+    """Calculate realistic café order pricing including modifiers and card/mobile surcharges."""
+    size_surcharge = SIZE_OPTIONS.get(size_option, 0.00)
+    milk_surcharge = MILK_OPTIONS.get(milk_option, 0.00)
+    extras_surcharge = sum(EXTRA_OPTIONS.get(extra, 0.00) for extra in extras_list)
+    modifiers_per_item = size_surcharge + milk_surcharge + extras_surcharge
+    item_price = max(float(base_price) + modifiers_per_item, 0)
+    subtotal = round(item_price * quantity, 2)
+    surcharge_rate = PAYMENT_METHODS.get(payment_method, PAYMENT_METHODS["Pay at Counter"])["surcharge_rate"]
+    service_fee = round(subtotal * surcharge_rate, 2)
+    total_price = round(subtotal + service_fee, 2)
+    gst_amount = round(total_price / 11, 2)  # GST is included in consumer prices.
+    return {
+        "modifiers_total": round(modifiers_per_item * quantity, 2),
+        "subtotal": subtotal,
+        "service_fee": service_fee,
+        "total_price": total_price,
+        "gst_amount": gst_amount,
+    }
+
+
+def create_transaction(order_code: str, payment_method: str, amount: float, surcharge: float, payment_status: str):
+    if payment_status != "Paid":
+        return ""
+    ref = "TXN-" + secrets.token_hex(4).upper()
+    with closing(get_db_connection()) as conn:
+        conn.execute(
+            """
+            INSERT INTO transactions (transaction_ref, order_code, payment_method, amount, surcharge_amount, payment_status)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (ref, order_code, payment_method, amount, surcharge, payment_status),
+        )
+        conn.commit()
+    return ref
+
 
 def prepare_order_rows(rows):
     prepared = []
@@ -89,6 +171,7 @@ def prepare_order_rows(rows):
         order["status_help"] = STATUS_HELP_TEXT.get(order["status"], "")
         order["estimated_minutes"] = estimate_prep_time(order["quantity"], order["status"])
         order["service_type"] = "Takeaway" if order.get("table_number") == "Takeaway" else f"Table {order.get('table_number')}"
+        order["extras_list"] = [x.strip() for x in (order.get("extras") or "").split(",") if x.strip()]
         prepared.append(order)
     return prepared
 
@@ -97,17 +180,20 @@ def prepare_order_rows(rows):
 def inject_user():
     return {"current_user": current_user()}
 
-@app.route("/")
-def home():
-    with closing(get_db_connection()) as conn:
-        available_items = conn.execute(
-            "SELECT COUNT(*) AS count FROM menu_items WHERE is_available = 1"
-        ).fetchone()["count"]
-        total_orders = conn.execute("SELECT COUNT(*) AS count FROM orders").fetchone()["count"]
-    return render_template(
-        "home.html", available_items=available_items, total_orders=total_orders
-    )
+def calculate_loyalty_points(total_spend: float) -> int:
+    """Simple loyalty rule for final sprint: 1 point per full dollar spent."""
+    return int(max(total_spend or 0, 0))
 
+
+def customer_total_spend(phone: str) -> float:
+    if not phone:
+        return 0.0
+    with closing(get_db_connection()) as conn:
+        row = conn.execute(
+            "SELECT COALESCE(SUM(total_price), 0) AS spend FROM orders WHERE customer_phone = ? AND status != 'Cancelled'",
+            (phone,),
+        ).fetchone()
+    return float(row["spend"] or 0)
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -131,6 +217,7 @@ def logout():
     session.clear()
     flash("You have been logged out.", "success")
     return redirect(url_for("home"))
+
 
 @app.route("/menu")
 def menu():
@@ -179,13 +266,26 @@ def create_order(item_id):
         customer_name = request.form.get("customer_name", "").strip()
         quantity_raw = request.form.get("quantity", "").strip()
         notes = request.form.get("notes", "").strip()
+        customer_phone = request.form.get("customer_phone", "").strip()
+        payment_method = request.form.get("payment_method", "Pay at Counter").strip() or "Pay at Counter"
         table_number = request.form.get("table_number", "Takeaway").strip() or "Takeaway"
+        size_option = request.form.get("size_option", "Regular").strip() or "Regular"
+        milk_option = request.form.get("milk_option", "Full Cream").strip() or "Full Cream"
+        selected_extras, extras_label = normalise_extras(request.form.getlist("extras"))
         valid_tables = {"Takeaway"} | {str(i) for i in range(1, 21)}
 
         if table_number not in valid_tables:
             flash("Please select a valid table number or takeaway option.", "error")
             return redirect(url_for("create_order", item_id=item_id))
 
+        if not customer_name or not quantity_raw:
+            flash("Customer name and quantity are required.", "error")
+            return redirect(url_for("create_order", item_id=item_id))
+        
+        if size_option not in SIZE_OPTIONS or milk_option not in MILK_OPTIONS:
+            flash("Please select valid size and milk options.", "error")
+            return redirect(url_for("create_order", item_id=item_id))
+        
         if not customer_name or not quantity_raw:
             flash("Customer name and quantity are required.", "error")
             return redirect(url_for("create_order", item_id=item_id))
@@ -203,30 +303,50 @@ def create_order(item_id):
             return redirect(url_for("create_order", item_id=item_id))
 
         order_code = build_unique_order_code()
-        total_price = float(item["price"]) * quantity
+        pricing = calculate_order_pricing(float(item["price"]), quantity, size_option, milk_option, selected_extras, payment_method)
+        payment_status = "Paid" if PAYMENT_METHODS[payment_method]["paid_immediately"] else "Unpaid"
+        transaction_ref = ""
 
         with closing(get_db_connection()) as conn:
             conn.execute(
                 """
                 INSERT INTO orders (
-                    order_code, customer_name, table_number,item_name, quantity,
-                    unit_price, total_price, notes, status
+                    order_code, customer_name, Customer_phone ,table_number,item_name, quantity,unit_price, size_option,
+                     milk_option, extras, modifiers_total, subtotal, service_fee, gst_amount, total_price, notes, status,
+                        payment_method, payment_status, payment_reference
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     order_code,
                     customer_name,
+                    customer_phone,
                     table_number,
                     item["name"],
                     quantity,
                     float(item["price"]),
-                    total_price,
+                    size_option,
+                    milk_option,
+                    extras_label,
+                    pricing["modifiers_total"],
+                    pricing["subtotal"],
+                    pricing["service_fee"],
+                    pricing["gst_amount"],
+                    pricing["total_price"],
                     notes,
-                    "Pending",
+                    payment_method,
+                    payment_status,
+                    transaction_ref,
+                    "pending",
                 ),
             )
             conn.commit()
+
+            transaction_ref = create_transaction(order_code, payment_method, pricing["total_price"], pricing["service_fee"], payment_status)
+        if transaction_ref:
+            with closing(get_db_connection()) as conn:
+                conn.execute("UPDATE orders SET payment_reference = ? WHERE order_code = ?", (transaction_ref, order_code))
+                conn.commit()
 
         flash(f"Order placed successfully. Your order code is {order_code}.", "success")
         return redirect(url_for("track_order", order_code=order_code))
@@ -313,6 +433,13 @@ def edit_order(order_id):
         customer_name = request.form.get("customer_name", "").strip()
         quantity_raw = request.form.get("quantity", "").strip()
         notes = request.form.get("notes", "").strip()
+        customer_phone = request.form.get("customer_phone", "").strip()
+        payment_status = request.form.get("payment_status", order["payment_status"] if "payment_status" in order.keys() else "Unpaid")
+        payment_method = request.form.get("payment_method", order["payment_method"] if "payment_method" in order.keys() else "Pay at Counter")
+        table_number = request.form.get("table_number", order["table_number"]).strip() or "Takeaway"
+        size_option = request.form.get("size_option", order["size_option"] if "size_option" in order.keys() else "Regular")
+        milk_option = request.form.get("milk_option", order["milk_option"] if "milk_option" in order.keys() else "Full Cream")
+        selected_extras, extras_label = normalise_extras(request.form.getlist("extras"))
         table_number = request.form.get("table_number", order["table_number"]).strip() or "Takeaway"
         valid_tables = {"Takeaway"} | {str(i) for i in range(1, 21)}
 
@@ -320,9 +447,16 @@ def edit_order(order_id):
             flash("Please select a valid table number or takeaway option.", "error")
             return redirect(url_for("edit_order", order_id=order_id))
         
+        if payment_method not in PAYMENT_METHODS or size_option not in SIZE_OPTIONS or milk_option not in MILK_OPTIONS:
+            flash("Please select valid payment, size and milk options.", "error")
+            return redirect(url_for("edit_order", order_id=order_id))
+
         status = request.form.get("status", order["status"])
         if not customer_name or len(customer_name) < 2:
             flash("Customer name must contain at least 2 characters.", "error")
+            return redirect(url_for("edit_order", order_id=order_id))
+        if payment_status not in {"Unpaid", "Paid", "Refunded"}:
+            flash("Invalid payment status selected.", "error")
             return redirect(url_for("edit_order", order_id=order_id))
         if status not in VALID_STATUSES:
             flash("Invalid status selected.", "error")
@@ -334,11 +468,11 @@ def edit_order(order_id):
         except ValueError:
             flash("Quantity must be between 1 and 50.", "error")
             return redirect(url_for("edit_order", order_id=order_id))
-        total_price = float(order["unit_price"]) * quantity
+        pricing = calculate_order_pricing(float(order["unit_price"]), quantity, size_option, milk_option, selected_extras, payment_method)
         with closing(get_db_connection()) as conn:
             conn.execute(
-                "UPDATE orders SET customer_name = ?, table_number = ?, quantity = ?, total_price = ?, notes = ?, status = ? WHERE id = ?",
-                (customer_name, table_number, quantity, total_price, notes, status, order_id),
+                "UPDATE orders SET customer_name = ?, customer_phone = ?, table_number = ?, quantity = ?, size_option = ?, milk_option = ?, extras = ?, modifiers_total = ?, subtotal = ?, service_fee = ?, gst_amount = ?, total_price = ?, notes = ?, status = ?, payment_status = ?, payment_method = ? WHERE id = ?",
+                (customer_name, customer_phone, table_number, quantity, size_option, milk_option, selected_extras, pricing["modifiers_total"], pricing["subtotal"], pricing["service_fee"], pricing["gst_amount"], pricing["total_price"], notes, status, payment_status, payment_method, order_id),
             )
             conn.commit()
         flash("Order updated successfully.", "success")
@@ -360,7 +494,7 @@ def cancel_order(order_id):
 def export_orders():
     with closing(get_db_connection()) as conn:
         rows = conn.execute(
-            "SELECT order_code, customer_name, table_number, item_name, quantity, unit_price, total_price, status, created_at FROM orders ORDER BY created_at DESC"
+            "SELECT * FROM orders ORDER BY created_at DESC"
         ).fetchall()
 
     output = io.StringIO()
@@ -368,11 +502,22 @@ def export_orders():
     writer.writerow([
         "Order Code",
         "Customer Name",
-         "Table/Service",
+        "Phone",
+        "Table/Service",
         "Item Name",
+        "Size",
+        "Milk",
+        "Extras",
         "Quantity",
         "Unit Price",
+        "Modifiers",
+        "Subtotal",
+        "Surcharge",  
+        "GST Included",
         "Total Price",
+        "Payment Method",
+        "Payment Status",
+        "payment Ref",
         "Status",
         "Created At",
     ])
@@ -381,12 +526,23 @@ def export_orders():
         writer.writerow([
             row["order_code"],
             row["customer_name"],
+            row["customer_phone"],
             row["table_number"],
             row["item_name"],
+            row["size_option"],
+            row["milk_option"],
+            row["extras"],
             row["quantity"],
             row["unit_price"],
+            row["modifiers_total"],
+            row["subtotal"],
+            row["service_fee"],
+            row["gst_amount"],  
             row["total_price"],
             row["status"],
+            row["payment_method"],
+            row["payment_status"],
+            row["payment_reference"],
             row["created_at"],
         ])
 
@@ -450,6 +606,101 @@ def qr_menu_svg():
     img.save(output)
     return Response(output.getvalue(), mimetype="image/svg+xml")
 
+@app.route("/receipt/<order_code>")
+def receipt(order_code):
+    with closing(get_db_connection()) as conn:
+        order = conn.execute("SELECT * FROM orders WHERE order_code = ?", (order_code.upper(),)).fetchone()
+    if order is None:
+        flash("Receipt not found for that order code.", "error")
+        return redirect(url_for("track_order"))
+    order = prepare_order_rows([order])[0]
+    loyalty_points = calculate_loyalty_points(order["total_price"])
+    if order.get("customer_phone"):
+        loyalty_points = calculate_loyalty_points(customer_total_spend(order["customer_phone"]))
+    return render_template("receipt.html", order=order, loyalty_points=loyalty_points)
+
+
+@app.route("/feedback/<order_code>", methods=["GET", "POST"])
+def feedback(order_code):
+    with closing(get_db_connection()) as conn:
+        order = conn.execute("SELECT * FROM orders WHERE order_code = ?", (order_code.upper(),)).fetchone()
+    if order is None:
+        flash("Order not found for feedback.", "error")
+        return redirect(url_for("track_order"))
+    if request.method == "POST":
+        try:
+            rating = int(request.form.get("rating", "0"))
+            if rating < 1 or rating > 5:
+                raise ValueError
+        except ValueError:
+            flash("Please select a rating between 1 and 5.", "error")
+            return redirect(url_for("feedback", order_code=order_code))
+        comment = request.form.get("comment", "").strip()
+        with closing(get_db_connection()) as conn:
+            conn.execute(
+                "INSERT INTO feedback (order_code, rating, comment) VALUES (?, ?, ?)",
+                (order_code.upper(), rating, comment),
+            )
+            conn.commit()
+        flash("Thank you for your feedback. Your response helps improve café service.", "success")
+        return redirect(url_for("track_order", order_code=order_code.upper()))
+    return render_template("feedback.html", order=order)
+
+
+@app.route("/kitchen")
+@login_required
+def kitchen_display():
+    with closing(get_db_connection()) as conn:
+        rows = conn.execute(
+            """
+            SELECT * FROM orders
+            WHERE status IN ('Pending', 'Preparing', 'Ready')
+            ORDER BY CASE status WHEN 'Pending' THEN 1 WHEN 'Preparing' THEN 2 WHEN 'Ready' THEN 3 ELSE 4 END, created_at ASC
+            """
+        ).fetchall()
+    grouped = {status: [] for status in ("Pending", "Preparing", "Ready")}
+    for order in prepare_order_rows(rows):
+        grouped.setdefault(order["status"], []).append(order)
+    return render_template("kitchen.html", grouped=grouped)
+
+
+@app.route("/tables")
+def table_availability():
+    with closing(get_db_connection()) as conn:
+        active = conn.execute(
+            """
+            SELECT table_number, COUNT(*) AS order_count
+            FROM orders
+            WHERE table_number != 'Takeaway' AND status IN ('Pending', 'Preparing', 'Ready')
+            GROUP BY table_number
+            """
+        ).fetchall()
+    active_map = {str(row["table_number"]): row["order_count"] for row in active}
+    tables = []
+    for number in range(1, 21):
+        count = active_map.get(str(number), 0)
+        tables.append({"number": number, "active_orders": count, "available": count == 0})
+    return render_template("tables.html", tables=tables)
+
+
+@app.route("/transactions")
+@login_required
+def transactions():
+    with closing(get_db_connection()) as conn:
+        rows = conn.execute("""
+            SELECT t.*, o.customer_name, o.table_number, o.item_name
+            FROM transactions t
+            LEFT JOIN orders o ON t.order_code = o.order_code
+            ORDER BY t.created_at DESC
+            LIMIT 100
+        """).fetchall()
+        totals = conn.execute("""
+            SELECT COUNT(*) AS count, COALESCE(SUM(amount), 0) AS amount, COALESCE(SUM(surcharge_amount), 0) AS surcharge
+            FROM transactions
+            WHERE payment_status = 'Paid'
+        """).fetchone()
+    return render_template("transactions.html", transactions=rows, totals=totals)
+
 
 @app.route("/dashboard")
 @login_required
@@ -508,6 +759,35 @@ def dashboard():
             """    
         ).fetchall()
         recent_orders = conn.execute("SELECT * FROM orders ORDER BY created_at DESC LIMIT 5").fetchall()
+        feedback_summary = conn.execute("SELECT COUNT(*) AS count, COALESCE(AVG(rating), 0) AS avg_rating FROM feedback").fetchone()
+        latest_feedback = conn.execute("SELECT * FROM feedback ORDER BY created_at DESC LIMIT 5").fetchall()
+        loyalty_customers = conn.execute("""
+            SELECT customer_name, customer_phone, COALESCE(SUM(total_price), 0) AS spend, COUNT(*) AS orders_count
+            FROM orders
+            WHERE customer_phone != '' AND status != 'Cancelled'
+            GROUP BY customer_phone
+            ORDER BY spend DESC
+            LIMIT 5
+        """).fetchall()
+        payment_summary = conn.execute("""
+            SELECT payment_method, COUNT(*) AS count, COALESCE(SUM(total_price), 0) AS amount
+            FROM orders
+            WHERE status != 'Cancelled'
+            GROUP BY payment_method
+            ORDER BY amount DESC
+        """).fetchall()
+        modifier_summary = conn.execute("""
+            SELECT milk_option, COUNT(*) AS count, COALESCE(SUM(modifiers_total), 0) AS modifier_revenue
+            FROM orders
+            WHERE status != 'Cancelled' AND milk_option != ''
+            GROUP BY milk_option
+            ORDER BY modifier_revenue DESC
+        """).fetchall()
+        transaction_summary = conn.execute("""
+            SELECT COUNT(*) AS count, COALESCE(SUM(amount), 0) AS amount, COALESCE(SUM(surcharge_amount), 0) AS surcharge
+            FROM transactions
+            WHERE payment_status = 'Paid'
+        """).fetchone()
     return render_template(
         "dashboard.html",
         total_orders=total_orders,
@@ -519,7 +799,14 @@ def dashboard():
         daily_summary=daily_summary,
         hourly_summary=hourly_summary,
         recent_orders=prepare_order_rows(recent_orders),
-         active_tables=active_tables,
+        active_tables=active_tables,
+        feedback_summary=feedback_summary,
+        latest_feedback=latest_feedback,
+        loyalty_customers=loyalty_customers,
+        calculate_loyalty_points=calculate_loyalty_points,
+        payment_summary=payment_summary,
+        modifier_summary=modifier_summary,
+        transaction_summary=transaction_summary,
     )
 
 if __name__ == "__main__":
