@@ -19,11 +19,20 @@ USER_SEED = [
     ("admin", "admin123", "Cafe Owner", "admin"),
 ]
 
+PROMO_SEED = [
+    ("WELCOME10", "Welcome 10% discount", 0.10, 1),
+    ("STUDENT10", "Student 10% discount", 0.10, 1),
+    ("COFFEE5", "Coffee lover 5% discount", 0.05, 1),
+]
 
 def column_names(conn, table_name):
-    rows = conn.execute(f"PRAGMA table_info({table_name})").fetchall()
-    return {row[1] for row in rows}
+    return {row[1] for row in conn.execute(f"PRAGMA table_info({table_name})").fetchall()}
 
+
+def add_column_if_missing(conn, table, column, definition):
+    if column not in column_names(conn, table):
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+        
 
 conn = sqlite3.connect(DB_PATH)
 cur = conn.cursor()
@@ -34,6 +43,7 @@ cur.execute(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         order_code TEXT UNIQUE,
         customer_name TEXT NOT NULL,
+        customer_phone TEXT NOT NULL DEFAULT '',
         table_number TEXT NOT NULL DEFAULT 'Takeaway',
         item_name TEXT NOT NULL,
         quantity INTEGER NOT NULL,
@@ -43,11 +53,13 @@ cur.execute(
         extras TEXT NOT NULL DEFAULT '',
         modifiers_total REAL NOT NULL DEFAULT 0,
         subtotal REAL NOT NULL DEFAULT 0,
+        discount_amount REAL NOT NULL DEFAULT 0,
         service_fee REAL NOT NULL DEFAULT 0,
         gst_amount REAL NOT NULL DEFAULT 0,
         total_price REAL NOT NULL,
         notes TEXT,
-        customer_phone TEXT NOT NULL DEFAULT '',
+        requested_time TEXT NOT NULL DEFAULT 'ASAP',
+        promo_code TEXT NOT NULL DEFAULT '',
         payment_method TEXT NOT NULL DEFAULT 'Pay at Counter',
         payment_status TEXT NOT NULL DEFAULT 'Unpaid',
         payment_reference TEXT NOT NULL DEFAULT '',
@@ -60,6 +72,12 @@ cur.execute(
 existing_order_columns = column_names(conn, "orders")
 if "order_code" not in existing_order_columns:
     cur.execute("ALTER TABLE orders ADD COLUMN order_code TEXT")
+if  "requested_time" not in existing_order_columns:
+    cur.execute("ALTER TABLE orders ADD COLUMN requested_time TEXT NOT NULL DEFAULT 'ASAP'")
+if "promo_code" not in existing_order_columns:
+    cur.execute("ALTER TABLE orders ADD COLUMN promo_code TEXT NOT NULL DEFAULT ''")
+if "discount_amount" not in existing_order_columns:
+    cur.execute("ALTER TABLE orders ADD COLUMN discount_amount REAL NOT NULL DEFAULT 0")
 if "notes" not in existing_order_columns:
     cur.execute("ALTER TABLE orders ADD COLUMN notes TEXT")
 if "table_number" not in existing_order_columns:
@@ -96,7 +114,10 @@ cur.execute(
         name TEXT NOT NULL,
         price REAL NOT NULL,
         description TEXT NOT NULL DEFAULT '',
-        image_url TEXT NOT NULL DEFAULT 'images/fallback.svg',
+        image_url TEXT NOT NULL DEFAULT 'images/fallback.jpg',
+        dietary_tags TEXT NOT NULL DEFAULT '',
+        prep_minutes INTEGER NOT NULL DEFAULT 8,
+        stock_count INTEGER NOT NULL DEFAULT 20,
         is_available INTEGER NOT NULL DEFAULT 1
     )
     """
@@ -106,7 +127,15 @@ existing_menu_columns = column_names(conn, "menu_items")
 if "description" not in existing_menu_columns:
     cur.execute("ALTER TABLE menu_items ADD COLUMN description TEXT NOT NULL DEFAULT 'image_url TEXT NOT NULL DEFAULT 'images/fallback.svg', is_available INTEGER NOT NULL DEFAULT 1'")
 if "image_url" not in existing_menu_columns:
-    cur.execute("ALTER TABLE menu_items ADD COLUMN image_url TEXT NOT NULL DEFAULT 'images/fallback.svg'")
+    cur.execute("ALTER TABLE menu_items ADD COLUMN image_url TEXT NOT NULL DEFAULT 'images/fallback.jpg'")
+if "is_available" not in existing_menu_columns:
+    cur.execute("ALTER TABLE menu_items ADD COLUMN is_available INTEGER NOT NULL DEFAULT 1")
+if "dietary_tags" not in existing_menu_columns:
+    cur.execute("ALTER TABLE menu_items ADD COLUMN dietary_tags TEXT NOT NULL DEFAULT ''")
+if "prep_minutes" not in existing_menu_columns:
+    cur.execute("ALTER TABLE menu_items ADD COLUMN prep_minutes INTEGER NOT NULL DEFAULT 8")
+if "stock_count" not in existing_menu_columns:
+    cur.execute("ALTER TABLE menu_items ADD COLUMN stock_count INTEGER NOT NULL DEFAULT 20")
 
 cur.execute(
     """
@@ -146,29 +175,39 @@ cur.execute(
     """
 )
 
-# Backfill pricing columns for older orders if necessary.
-cur.execute("UPDATE orders SET subtotal = total_price WHERE subtotal = 0")
-cur.execute("UPDATE orders SET gst_amount = ROUND(total_price / 11, 2) WHERE gst_amount = 0")
+cur.execute("""
+CREATE TABLE IF NOT EXISTS promo_codes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    code TEXT UNIQUE NOT NULL,
+    description TEXT NOT NULL,
+    discount_rate REAL NOT NULL,
+    is_active INTEGER NOT NULL DEFAULT 1
+)
+""")
 
 if cur.execute("SELECT COUNT(*) FROM menu_items").fetchone()[0] == 0:
     cur.executemany(
-        "INSERT INTO menu_items (category, name, price, description, image_url, is_available) VALUES (?, ?, ?, ?, ?, ?)",
+        "INSERT INTO menu_items (category, name, price, description, image_url, dietary_tags, prep_minutes, stock_count, is_available) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
         MENU_SEED,
     )
 else:
-    for category, name, price, description, image_url, is_available in MENU_SEED:
-        cur.execute(
-            """
+    for category, name, price, description, image_url, dietary_tags, prep_minutes, stock_count, is_available in MENU_SEED:
+        cur.execute("""
             UPDATE menu_items
-           SET description = ?,
-           image_url = ?
-           WHERE name = ?
-            """,
-            (description, image_url, name),
-        )
+            SET description = ?, image_url = ?, dietary_tags = ?, prep_minutes = ?
+            WHERE name = ?
+        """, (description, image_url, dietary_tags, prep_minutes, name))
 
 if cur.execute("SELECT COUNT(*) FROM users").fetchone()[0] == 0:
     cur.executemany("INSERT INTO users (username, password, display_name, role) VALUES (?, ?, ?, ?)", USER_SEED)
+
+if cur.execute("SELECT COUNT(*) FROM promo_codes").fetchone()[0] == 0:
+    cur.executemany("INSERT INTO promo_codes (code, description, discount_rate, is_active) VALUES (?, ?, ?, ?)", PROMO_SEED)
+
+
+cur.execute("UPDATE orders SET subtotal = total_price WHERE subtotal = 0")
+cur.execute("UPDATE orders SET gst_amount = ROUND(total_price / 11, 2) WHERE gst_amount = 0")
+cur.execute("UPDATE orders SET status = 'Pending' WHERE status = 'pending'")
 
 conn.commit()
 conn.close()

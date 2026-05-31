@@ -121,6 +121,11 @@ PAYMENT_METHODS = {
     "Apple Pay / Google Pay": {"surcharge_rate": 0.015, "paid_immediately": True},
 }
 
+PROMO_CODES = {
+    "WELCOME10": {"discount_rate": 0.10, "label": "Welcome 10% discount"},
+    "STUDENT10": {"discount_rate": 0.10, "label": "Student 10% discount"},
+    "COFFEE5": {"discount_rate": 0.05, "label": "Coffee lover 5% discount"},
+}
 
 def get_db_connection():
     conn = sqlite3.connect(DB_PATH)
@@ -156,7 +161,8 @@ def inject_helpers():
         "size_options": SIZE_OPTIONS,
         "extra_options": EXTRA_OPTIONS,
         "payment_methods": PAYMENT_METHODS,
-        }
+        "promo_codes": PROMO_CODES,
+    }
 
 def generate_order_code(length: int = 8) -> str:
     return secrets.token_hex(length // 2).upper()
@@ -191,6 +197,13 @@ def normalise_extras(selected_extras):
     valid = [extra for extra in selected_extras if extra in EXTRA_OPTIONS]
     return valid, ", ".join(valid)
 
+def normalise_promo_code(promo_code: str) -> str:
+    return (promo_code or "").strip().upper()
+
+
+def get_promo_discount_rate(promo_code: str) -> float:
+    promo_code = normalise_promo_code(promo_code)
+    return PROMO_CODES.get(promo_code, {}).get("discount_rate", 0.0)
 
 def calculate_order_pricing(base_price: float, quantity: int, size_option: str, milk_option: str, extras_list, payment_method: str):
     """Calculate realistic café order pricing including modifiers and card/mobile surcharges."""
@@ -199,14 +212,20 @@ def calculate_order_pricing(base_price: float, quantity: int, size_option: str, 
     extras_surcharge = sum(EXTRA_OPTIONS.get(extra, 0.00) for extra in extras_list)
     modifiers_per_item = size_surcharge + milk_surcharge + extras_surcharge
     item_price = max(float(base_price) + modifiers_per_item, 0)
-    subtotal = round(item_price * quantity, 2)
+    subtotal_before_discount = round(item_price * quantity, 2)
+    promo_code = normalise_promo_code(promo_code)
+    discount_rate = get_promo_discount_rate(promo_code)
+    discount_amount = round(subtotal_before_discount * discount_rate, 2)
+    discounted_subtotal = round(max(subtotal_before_discount - discount_amount, 0), 2)
     surcharge_rate = PAYMENT_METHODS.get(payment_method, PAYMENT_METHODS["Pay at Counter"])["surcharge_rate"]
-    service_fee = round(subtotal * surcharge_rate, 2)
-    total_price = round(subtotal + service_fee, 2)
+    service_fee = round(discounted_subtotal * surcharge_rate, 2)
+    total_price = round(discounted_subtotal + service_fee, 2)
     gst_amount = round(total_price / 11, 2)  # GST is included in consumer prices.
     return {
         "modifiers_total": round(modifiers_per_item * quantity, 2),
-        "subtotal": subtotal,
+        "subtotal": subtotal_before_discount,
+        "discount_amount": discount_amount,
+        "discounted_subtotal": discounted_subtotal,
         "service_fee": service_fee,
         "total_price": total_price,
         "gst_amount": gst_amount,
@@ -260,12 +279,19 @@ def customer_total_spend(phone: str) -> float:
         ).fetchone()
     return float(row["spend"] or 0)
 
+def get_menu_category_for_item(item_name: str) -> str:
+    with closing(get_db_connection()) as conn:
+        row = conn.execute("SELECT category FROM menu_items WHERE name = ?", (item_name,)).fetchone()
+    return row["category"] if row else "Coffee"
+
 @app.route("/")
 def home():
     with closing(get_db_connection()) as conn:
         available_items = conn.execute("SELECT COUNT(*) AS count FROM menu_items WHERE is_available = 1").fetchone()["count"]
         total_orders = conn.execute("SELECT COUNT(*) AS count FROM orders").fetchone()["count"]
-    return render_template("home.html", available_items=available_items, total_orders=total_orders)
+        low_stock = conn.execute("SELECT COUNT(*) AS count FROM menu_items WHERE stock_count <= 5").fetchone()["count"]
+        active_tables = conn.execute("SELECT COUNT(DISTINCT table_number) AS count FROM orders WHERE table_number != 'Takeaway' AND status IN ('Pending','Preparing','Ready')").fetchone()["count"]
+    return render_template("home.html", available_items=available_items, total_orders=total_orders, low_stock=low_stock, active_tables=active_tables)
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -340,11 +366,13 @@ def create_order(item_id):
         notes = request.form.get("notes", "").strip()
         customer_phone = request.form.get("customer_phone", "").strip()
         payment_method = request.form.get("payment_method", "Pay at Counter").strip() or "Pay at Counter"
+        promo_code = normalise_promo_code(request.form.get("promo_code", ""))
+        requested_time = request.form.get("requested_time", "ASAP").strip() or "ASAP"
         table_number = request.form.get("table_number", "Takeaway").strip() or "Takeaway"
         size_option = request.form.get("size_option", "Regular").strip() or "Regular"
         milk_option = request.form.get("milk_option", "Full Cream").strip() or "Full Cream"
         selected_extras = request.form.getlist("extras")
-        size_option, milk_option, selected_extras, extras_label = clean_modifiers_for_category(
+        size_option, milk_option, selected_extras, extras_label, modifier_option = clean_modifiers_for_category(
         item["category"], size_option, milk_option, selected_extras
         )
         valid_tables = {"Takeaway"} | {str(i) for i in range(1, 21)}
@@ -355,6 +383,10 @@ def create_order(item_id):
 
         if not customer_name or not quantity_raw:
             flash("Customer name and quantity are required.", "error")
+            return redirect(url_for("create_order", item_id=item_id))
+        
+        if promo_code and promo_code not in PROMO_CODES:
+            flash("Invalid promo code. Try WELCOME10, STUDENT10 or leave it blank.", "error")
             return redirect(url_for("create_order", item_id=item_id))
         
         if size_option not in SIZE_OPTIONS or milk_option not in MILK_OPTIONS:
@@ -384,7 +416,8 @@ def create_order(item_id):
            size_option,
            milk_option,
            selected_extras,
-           payment_method
+           payment_method,
+           promo_code
         )
         payment_status = "Paid" if PAYMENT_METHODS[payment_method]["paid_immediately"] else "Unpaid"
         transaction_ref = ""
@@ -394,10 +427,10 @@ def create_order(item_id):
                 """
                 INSERT INTO orders (
                     order_code, customer_name, Customer_phone ,table_number,item_name, quantity,unit_price, size_option,
-                     milk_option, extras, modifiers_total, subtotal, service_fee, gst_amount, total_price, notes, status,
+                     milk_option, extras, modifiers_total, subtotal, discount_amount,service_fee, gst_amount, total_price, notes, requested_time, promo_code, status,
                         payment_method, payment_status, payment_reference
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     order_code,
@@ -412,16 +445,20 @@ def create_order(item_id):
                     extras_label,
                     pricing["modifiers_total"],
                     pricing["subtotal"],
+                    pricing["discount_amount"],
                     pricing["service_fee"],
                     pricing["gst_amount"],
                     pricing["total_price"],
                     notes,
+                    requested_time,
+                    promo_code,
                     "pending",
                     payment_method,
                     payment_status,
                     transaction_ref,
                 ),
             )
+            conn.execute("UPDATE menu_items SET stock_count = MAX(stock_count - ?, 0) WHERE id = ?", (quantity, item_id))
             conn.commit()
 
             transaction_ref = create_transaction(order_code, payment_method, pricing["total_price"], pricing["service_fee"], payment_status)
@@ -522,15 +559,24 @@ def edit_order(order_id):
         customer_phone = request.form.get("customer_phone", "").strip()
         payment_status = request.form.get("payment_status", order["payment_status"] if "payment_status" in order.keys() else "Unpaid")
         payment_method = request.form.get("payment_method", order["payment_method"] if "payment_method" in order.keys() else "Pay at Counter")
+        promo_code = normalise_promo_code(request.form.get("promo_code", order["promo_code"] if "promo_code" in order.keys() else ""))
+        requested_time = request.form.get("requested_time", order["requested_time"] if "requested_time" in order.keys() else "ASAP").strip() or "ASAP"
         table_number = request.form.get("table_number", order["table_number"]).strip() or "Takeaway"
         size_option = request.form.get("size_option", order["size_option"] if "size_option" in order.keys() else "Regular")
         milk_option = request.form.get("milk_option", order["milk_option"] if "milk_option" in order.keys() else "Full Cream")
-        selected_extras, extras_label = normalise_extras(request.form.getlist("extras"))
+        item_category = get_menu_category_for_item(order["item_name"])
+        size_option, milk_option, selected_extras, extras_label, modifier_options = clean_modifiers_for_category(
+            item_category, size_option, milk_option, request.form.getlist("extras")
+        )
         table_number = request.form.get("table_number", order["table_number"]).strip() or "Takeaway"
         valid_tables = {"Takeaway"} | {str(i) for i in range(1, 21)}
 
         if table_number not in valid_tables:
             flash("Please select a valid table number or takeaway option.", "error")
+            return redirect(url_for("edit_order", order_id=order_id))
+        
+        if promo_code and promo_code not in PROMO_CODES:
+            flash("Invalid promo code selected.", "error")
             return redirect(url_for("edit_order", order_id=order_id))
         
         if payment_method not in PAYMENT_METHODS or size_option not in SIZE_OPTIONS or milk_option not in MILK_OPTIONS:
@@ -557,8 +603,8 @@ def edit_order(order_id):
         pricing = calculate_order_pricing(float(order["unit_price"]), quantity, size_option, milk_option, selected_extras, payment_method)
         with closing(get_db_connection()) as conn:
             conn.execute(
-                "UPDATE orders SET customer_name = ?, customer_phone = ?, table_number = ?, quantity = ?, size_option = ?, milk_option = ?, extras = ?, modifiers_total = ?, subtotal = ?, service_fee = ?, gst_amount = ?, total_price = ?, notes = ?, status = ?, payment_status = ?, payment_method = ? WHERE id = ?",
-                (customer_name, customer_phone, table_number, quantity, size_option, milk_option, selected_extras, pricing["modifiers_total"], pricing["subtotal"], pricing["service_fee"], pricing["gst_amount"], pricing["total_price"], notes, status, payment_status, payment_method, order_id),
+                "UPDATE orders SET customer_name = ?, customer_phone = ?, table_number = ?, quantity = ?, size_option = ?, milk_option = ?, extras = ?, modifiers_total = ?, subtotal = ?, discount_amount = ?, service_fee = ?, gst_amount = ?, total_price = ?, notes = ?, requested_time = ?, promo_code = ?, status = ?, payment_status = ?, payment_method = ? WHERE id = ?",
+                (customer_name, customer_phone, table_number, quantity, size_option, milk_option, selected_extras, pricing["modifiers_total"], pricing["subtotal"], pricing["discount_amount"], pricing["service_fee"], pricing["gst_amount"], pricing["total_price"], notes, requested_time, promo_code, status, payment_status, payment_method, order_id),
             )
             conn.commit()
         flash("Order updated successfully.", "success")
@@ -598,9 +644,12 @@ def export_orders():
         "Unit Price",
         "Modifiers",
         "Subtotal",
+        "Discount",
+        "Promo Code",
         "Surcharge",  
         "GST Included",
         "Total Price",
+        "Requested Time",
         "Payment Method",
         "Payment Status",
         "payment Ref",
@@ -622,13 +671,16 @@ def export_orders():
             row["unit_price"],
             row["modifiers_total"],
             row["subtotal"],
+            row["discount_amount"],
+            row["promo code"],
             row["service_fee"],
             row["gst_amount"],  
             row["total_price"],
-            row["status"],
+            row["requested_time"],
             row["payment_method"],
             row["payment_status"],
             row["payment_reference"],
+            row["status"],
             row["created_at"],
         ])
 
@@ -645,6 +697,9 @@ def admin_menu():
         price_raw = request.form.get("price", "").strip()
         description = request.form.get("description", "").strip()
         image_url = request.form.get("image_url", "").strip() or "images/fallback.jpg"
+        dietary_tags = request.form.get("dietary_tags", "").strip()
+        prep_minutes_raw = request.form.get("prep_minutes", "8").strip() or "8"
+        stock_count_raw = request.form.get("stock_count", "20").strip() or "20"
         if not category or not name or not price_raw or not description:
             flash("Category, name , price and description are required.", "error")
             return redirect(url_for("admin_menu"))
@@ -652,8 +707,12 @@ def admin_menu():
             price = float(price_raw)
             if price < 0:
                 raise ValueError
+            prep_minutes = int(prep_minutes_raw)
+            stock_count = int(stock_count_raw)
+            if prep_minutes < 1 or stock_count < 0:
+                raise ValueError
         except ValueError:
-            flash("Price must be a valid positive number.", "error")
+            flash("Price, prep time and stock must be valid positive numbers.", "error")
             return redirect(url_for("admin_menu"))
         with closing(get_db_connection()) as conn:
             conn.execute("INSERT INTO menu_items (category, name, price, description, image_url, is_available) VALUES (?, ?, ?, ?, ?, 1)", (category, name, price, description, image_url))
@@ -676,6 +735,22 @@ def toggle_menu_item(item_id):
             conn.execute("UPDATE menu_items SET is_available = ? WHERE id = ?", (new_value, item_id))
             conn.commit()
             flash("Menu item availability updated.", "success")
+    return redirect(url_for("admin_menu"))
+
+@app.route("/admin/menu/<int:item_id>/stock", methods=["POST"])
+@login_required
+def update_menu_stock(item_id):
+    try:
+        stock_count = int(request.form.get("stock_count", "0"))
+        if stock_count < 0:
+            raise ValueError
+    except ValueError:
+        flash("Stock must be a whole number 0 or greater.", "error")
+        return redirect(url_for("admin_menu"))
+    with closing(get_db_connection()) as conn:
+        conn.execute("UPDATE menu_items SET stock_count = ? WHERE id = ?", (stock_count, item_id))
+        conn.commit()
+    flash("Stock level updated.", "success")
     return redirect(url_for("admin_menu"))
 
 @app.route("/qr")
@@ -728,7 +803,7 @@ def feedback(order_code):
                 (order_code.upper(), rating, comment),
             )
             conn.commit()
-        flash("Thank you for your feedback. Your response helps improve café service.", "success")
+        flash("Thank you for your feedback. Your response helps improve cafe service.", "success")
         return redirect(url_for("track_order", order_code=order_code.upper()))
     return render_template("feedback.html", order=order)
 
@@ -874,6 +949,20 @@ def dashboard():
             FROM transactions
             WHERE payment_status = 'Paid'
         """).fetchone()
+        low_stock_items = conn.execute("""
+            SELECT name, category, stock_count
+            FROM menu_items
+            WHERE stock_count <= 5
+            ORDER BY stock_count ASC, name
+            LIMIT 8
+        """).fetchall()
+        promo_summary = conn.execute("""
+            SELECT promo_code, COUNT(*) AS count, COALESCE(SUM(discount_amount), 0) AS discount_total
+            FROM orders
+            WHERE promo_code != ''
+            GROUP BY promo_code
+            ORDER BY discount_total DESC
+        """).fetchall()
     return render_template(
         "dashboard.html",
         total_orders=total_orders,
@@ -893,6 +982,8 @@ def dashboard():
         payment_summary=payment_summary,
         modifier_summary=modifier_summary,
         transaction_summary=transaction_summary,
+        low_stock_items=low_stock_items,
+        promo_summary=promo_summary,
     )
 
 if __name__ == "__main__":
