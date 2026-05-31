@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="card">
+    <p class="eyebrow">Kitchen Display System</p>
+    <h2>Live Kitchen Display</h2>
+    <p>Focused preparation board for active orders. This final sprint feature supports realistic café operations.</p>
+</section>
+
+<section class="kitchen-grid">
+    {% for status, orders in grouped.items() %}
+    <article class="card kitchen-column">
+        <h3>{{ status }} ({{ orders|length }})</h3>
+        {% for order in orders %}
+        <div class="kitchen-ticket status-border-{{ status|lower }}">
+            <strong>{{ order.order_code }}</strong>
+            <div>{{ order.item_name }} × {{ order.quantity }}</div>
+            <div>{{ order.service_type }}</div>
+            {% if order.notes %}<div class="muted">{{ order.notes }}</div>{% endif %}
+            <div class="muted small-text">{{ order.created_at }}</div>
+        </div>
+        {% else %}
+        <p class="muted">No {{ status|lower }} orders.</p>
+        {% endfor %}
+    </article>
+    {% endfor %}
+</section>
+{% endblock %}

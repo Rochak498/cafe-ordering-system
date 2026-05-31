@@ -23,7 +23,14 @@
         <div><strong>Table / Service:</strong> {{ order.service_type }}</div>
         <div><strong>Item:</strong> {{ order.item_name }}</div>
         <div><strong>Quantity:</strong> {{ order.quantity }}</div>
+        <div><strong>Size:</strong> {{ order.size_option }}</div>
+        <div><strong>Milk / Dietary:</strong> {{ order.milk_option }}</div>
+        <div><strong>Extras:</strong> {{ order.extras or 'None' }}</div>
+        <div><strong>Subtotal:</strong> ${{ "%.2f"|format(order.subtotal or 0) }}</div>
+        <div><strong>Payment surcharge:</strong> ${{ "%.2f"|format(order.service_fee or 0) }}</div>
+        <div><strong>GST included:</strong> ${{ "%.2f"|format(order.gst_amount or 0) }}</div>
         <div><strong>Total:</strong> ${{ "%.2f"|format(order.total_price) }}</div>
+        <div><strong>Payment:</strong> {{ order.payment_method }} — {{ order.payment_status }}</div>
         <div><strong>Status:</strong> <span class="status-badge status-{{ order.status|lower }}">{{ order.status }}</span></div>
     </div>
     {% if order.notes %}
@@ -37,6 +44,10 @@
             Your order is ready or completed.
         {% endif %}
     </p>
+    <div class="hero-actions">
+        <a class="button-link" href="{{ url_for('receipt', order_code=order.order_code) }}">View Receipt</a>
+        <a class="button-link secondary" href="{{ url_for('feedback', order_code=order.order_code) }}">Give Feedback</a>
+    </div>
 </section>
 {% endif %}
 {% endblock %}

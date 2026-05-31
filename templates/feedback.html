@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="card split-layout">
+    <div>
+        <p class="eyebrow">Customer Feedback</p>
+        <h2>Feedback for Order {{ order.order_code }}</h2>
+        <p>Your feedback helps the cafe improve service speed, food quality, and customer experience.</p>
+        <p><strong>Item:</strong> {{ order.item_name }}</p>
+        <p><strong>Customer:</strong> {{ order.customer_name }}</p>
+    </div>
+    <form method="POST" class="form-panel">
+        <label for="rating">Rating</label>
+        <select id="rating" name="rating" required>
+            <option value="">Select rating</option>
+            <option value="5">5 - Excellent</option>
+            <option value="4">4 - Good</option>
+            <option value="3">3 - Average</option>
+            <option value="2">2 - Needs improvement</option>
+            <option value="1">1 - Poor</option>
+        </select>
+
+        <label for="comment">Comment</label>
+        <textarea id="comment" name="comment" rows="5" placeholder="Optional feedback about service, item quality, speed, or app usability"></textarea>
+
+        <button type="submit">Submit Feedback</button>
+    </form>
+</section>
+{% endblock %}

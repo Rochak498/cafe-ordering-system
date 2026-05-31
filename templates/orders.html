@@ -36,13 +36,13 @@
                     <tr>
                         <th>Code</th>
                         <th>Customer</th>
-                        <th>Table/Service</th>
-                        <th>Item</th>
+                        <th>Table</th>
+                        <th>Item & Modifiers</th>
                         <th>Qty</th>
-                        <th>Total</th>
+                        <th>Pricing</th>
+                        <th>Payment</th>
                         <th>Status</th>
-                        <th>Estimated Wait</th>
-                        <th>Created</th>
+                        <th>Wait</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -50,11 +50,21 @@
                     {% for order in orders %}
                     <tr>
                         <td>{{ order.order_code }}</td>
-                        <td>{{ order.customer_name }}</td>
+                        <td>{{ order.customer_name }}<div class="muted small-text">{{ order.customer_phone or 'No phone' }}</div></td>
                         <td>{{ order.service_type }}</td>
-                        <td>{{ order.item_name }}{% if order.notes %}<div class="muted">{{ order.notes }}</div>{% endif %}</td>
+                        <td class="left-text">
+                            <strong>{{ order.item_name }}</strong>
+                            <div class="muted small-text">{{ order.size_option }} • {{ order.milk_option }}{% if order.extras %} • {{ order.extras }}{% endif %}</div>
+                            {% if order.notes %}<div class="muted small-text">Note: {{ order.notes }}</div>{% endif %}
+                        </td>
                         <td>{{ order.quantity }}</td>
-                        <td>${{ "%.2f"|format(order.total_price) }}</td>
+                         <td class="left-text">
+                            <strong>${{ "%.2f"|format(order.total_price) }}</strong>
+                            <div class="muted small-text">Subtotal ${{ "%.2f"|format(order.subtotal or 0) }}</div>
+                            <div class="muted small-text">Modifiers ${{ "%.2f"|format(order.modifiers_total or 0) }} • Surcharge ${{ "%.2f"|format(order.service_fee or 0) }}</div>
+                            <div class="muted small-text">GST incl. ${{ "%.2f"|format(order.gst_amount or 0) }}</div>
+                        </td>
+                        <td>{{ order.payment_method }}<div class="muted small-text">{{ order.payment_status }}</div>{% if order.payment_reference %}<div class="muted small-text">{{ order.payment_reference }}</div>{% endif %}</td>
                         <td>
                             <span class="status-badge status-{{ order.status|lower }}">{{ order.status }}</span>
                             <div class="muted small-text">{{ order.status_help }}</div>

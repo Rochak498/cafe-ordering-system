@@ -99,4 +99,82 @@
     </div>
     {% else %}<p>No recent orders available.</p>{% endif %}
 </section>
+
+<section class="split-layout">
+    <article class="card">
+        <h3>Payment Method Summary</h3>
+        {% if payment_summary %}
+        <table>
+            <thead><tr><th>Method</th><th>Orders</th><th>Amount</th></tr></thead>
+            <tbody>
+                {% for payment in payment_summary %}
+                <tr><td>{{ payment.payment_method }}</td><td>{{ payment.count }}</td><td>${{ "%.2f"|format(payment.amount) }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}<p>No payment data available.</p>{% endif %}
+    </article>
+
+    <article class="card">
+        <h3>Modifier / Alternative Milk Revenue</h3>
+        {% if modifier_summary %}
+        <table>
+            <thead><tr><th>Milk / Dietary</th><th>Orders</th><th>Modifier Revenue</th></tr></thead>
+            <tbody>
+                {% for mod in modifier_summary %}
+                <tr><td>{{ mod.milk_option }}</td><td>{{ mod.count }}</td><td>${{ "%.2f"|format(mod.modifier_revenue) }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}<p>No modifier data available.</p>{% endif %}
+    </article>
+</section>
+
+<section class="card">
+    <h3>Transaction Summary</h3>
+    <p><strong>Paid Transactions:</strong> {{ transaction_summary.count }}</p>
+    <p><strong>Total Collected:</strong> ${{ "%.2f"|format(transaction_summary.amount or 0) }}</p>
+    <p><strong>Card/Mobile Surcharges:</strong> ${{ "%.2f"|format(transaction_summary.surcharge or 0) }}</p>
+    <a class="button-link secondary" href="{{ url_for('transactions') }}">View Transaction Register</a>
+</section>
+
+
+<section class="split-layout">
+    <article class="card">
+        <h3>Customer Feedback Summary</h3>
+        <p><strong>Total Feedback:</strong> {{ feedback_summary.count }}</p>
+        <p><strong>Average Rating:</strong> {{ "%.1f"|format(feedback_summary.avg_rating) }} / 5</p>
+        {% if latest_feedback %}
+        <div class="recent-list">
+            {% for feedback in latest_feedback %}
+            <div class="recent-order">
+                <div>
+                    <strong>{{ feedback.order_code }}</strong> — {{ feedback.rating }}/5
+                    <div class="muted">{{ feedback.comment or 'No comment provided' }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}<p>No feedback submitted yet.</p>{% endif %}
+    </article>
+
+    <article class="card">
+        <h3>Top Loyalty Customers</h3>
+        {% if loyalty_customers %}
+        <table>
+            <thead><tr><th>Customer</th><th>Phone</th><th>Orders</th><th>Points</th></tr></thead>
+            <tbody>
+                {% for customer in loyalty_customers %}
+                <tr>
+                    <td>{{ customer.customer_name }}</td>
+                    <td>{{ customer.customer_phone }}</td>
+                    <td>{{ customer.orders_count }}</td>
+                    <td>{{ calculate_loyalty_points(customer.spend) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}<p>No loyalty customer data yet.</p>{% endif %}
+    </article>
+</section>
 {% endblock %}

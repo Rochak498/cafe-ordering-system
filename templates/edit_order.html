@@ -6,12 +6,16 @@
         <p class="eyebrow">Staff Order Management</p>
         <h2>Edit Order {{ order.order_code }}</h2>
         <p><strong>Item:</strong> {{ order.item_name }}</p>
-        <p><strong>Unit price:</strong> ${{ "%.2f"|format(order.unit_price) }}</p>
-        <p class="muted">Editing is restricted to staff users to support role-based control.</p>
+        <p><strong>Base Unit Price:</strong> ${{ "%.2f"|format(order.unit_price) }}</p>
+        <p><strong>Current Total:</strong> ${{ "%.2f"|format(order.total_price) }}</p>
+        <p class="muted">Staff can correct customer details, table/service option, quantity, modifiers, payment, notes, and order status.</p>
     </div>
     <form method="POST" class="form-panel">
         <label for="customer_name">Customer Name</label>
         <input type="text" id="customer_name" name="customer_name" value="{{ order.customer_name }}" minlength="2" required>
+
+        <label for="customer_phone">Customer Phone</label>
+        <input type="tel" id="customer_phone" name="customer_phone" value="{{ order.customer_phone or '' }}" placeholder="04XXXXXXXX">
 
         <label for="table_number">Table / Service Option</label>
         <select id="table_number" name="table_number" required>
@@ -21,13 +25,55 @@
             {% endfor %}
         </select>
 
+        <div class="two-col-form">
+            <div>
+                <label for="size_option">Size</label>
+                <select id="size_option" name="size_option" required>
+                    {% for size, surcharge in size_options.items() %}
+                    <option value="{{ size }}" {% if order.size_option == size %}selected{% endif %}>{{ size }}{% if surcharge > 0 %} (+${{ "%.2f"|format(surcharge) }}){% elif surcharge < 0 %} (-${{ "%.2f"|format(-surcharge) }}){% endif %}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="milk_option">Milk / Dietary Option</label>
+                <select id="milk_option" name="milk_option" required>
+                    {% for milk, surcharge in milk_options.items() %}
+                    <option value="{{ milk }}" {% if order.milk_option == milk %}selected{% endif %}>{{ milk }}{% if surcharge > 0 %} (+${{ "%.2f"|format(surcharge) }}){% endif %}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <label>Extras / Modifiers</label>
+        <div class="checkbox-grid">
+            {% set selected_extras = (order.extras or '').split(', ') %}
+            {% for extra, surcharge in extra_options.items() %}
+            <label class="checkbox-card"><input type="checkbox" name="extras" value="{{ extra }}" {% if extra in selected_extras %}checked{% endif %}> {{ extra }} <span>+${{ "%.2f"|format(surcharge) }}</span></label>
+            {% endfor %}
+        </div>
+
+
         <label for="quantity">Quantity</label>
         <input type="number" id="quantity" name="quantity" min="1" max="50" value="{{ order.quantity }}" required>
+
+        <label for="payment_method">Payment Method</label>
+        <select id="payment_method" name="payment_method">
+            {% for method, config in payment_methods.items() %}
+            <option value="{{ method }}" {% if order.payment_method == method %}selected{% endif %}>{{ method }}{% if config.surcharge_rate > 0 %} ({{ "%.1f"|format(config.surcharge_rate * 100) }}% surcharge){% endif %}</option>
+            {% endfor %}
+        </select>
 
         <label for="status">Status</label>
         <select id="status" name="status">
             {% for status in valid_statuses %}
             <option value="{{ status }}" {% if order.status == status %}selected{% endif %}>{{ status }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="payment_status">Payment Status</label>
+        <select id="payment_status" name="payment_status">
+            {% for payment_status in ['Unpaid', 'Paid', 'Refunded'] %}
+            <option value="{{ payment_status }}" {% if order.payment_status == payment_status %}selected{% endif %}>{{ payment_status }}</option>
             {% endfor %}
         </select>
 

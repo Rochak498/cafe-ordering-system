@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="card">
+    <p class="eyebrow">Table Availability</p>
+    <h2>Cafe Table Slots</h2>
+    <p>Customers and staff can view current table activity before placing dine-in orders.</p>
+</section>
+
+<section class="card">
+    <div class="table-slot-grid">
+        {% for table in tables %}
+        <div class="table-slot {% if table.available %}available{% else %}occupied{% endif %}">
+            <strong>Table {{ table.number }}</strong>
+            {% if table.available %}
+                <span>Available</span>
+            {% else %}
+                <span>{{ table.active_orders }} active order(s)</span>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

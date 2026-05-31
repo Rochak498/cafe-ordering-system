@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="card">
+    <p class="eyebrow">Payment Reconciliation</p>
+    <h2>Transactions</h2>
+    <p>Simulated payment transaction records for cash, EFTPOS/card, and mobile wallet payments.</p>
+</section>
+
+<section class="dashboard-grid">
+    <div class="card metric"><h2>Paid Transactions</h2><p>{{ totals.count }}</p></div>
+    <div class="card metric"><h2>Collected Amount</h2><p>${{ "%.2f"|format(totals.amount or 0) }}</p></div>
+    <div class="card metric"><h2>Card/Mobile Surcharges</h2><p>${{ "%.2f"|format(totals.surcharge or 0) }}</p></div>
+</section>
+
+<section class="card">
+    <h3>Recent Transactions</h3>
+    {% if transactions %}
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Reference</th><th>Order</th><th>Customer</th><th>Item</th><th>Method</th><th>Amount</th><th>Surcharge</th><th>Status</th><th>Created</th></tr></thead>
+            <tbody>
+                {% for tx in transactions %}
+                <tr>
+                    <td>{{ tx.transaction_ref }}</td>
+                    <td>{{ tx.order_code }}</td>
+                    <td>{{ tx.customer_name or 'N/A' }}</td>
+                    <td>{{ tx.item_name or 'N/A' }}</td>
+                    <td>{{ tx.payment_method }}</td>
+                    <td>${{ "%.2f"|format(tx.amount) }}</td>
+                    <td>${{ "%.2f"|format(tx.surcharge_amount) }}</td>
+                    <td>{{ tx.payment_status }}</td>
+                    <td>{{ tx.created_at }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}<p>No paid transactions yet.</p>{% endif %}
+</section>
+{% endblock %}
