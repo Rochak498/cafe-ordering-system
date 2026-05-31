@@ -361,32 +361,37 @@ button.danger:hover { background: #991b1b; }
     margin-top: 12px;
 }
 
-.two-col-form {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 14px;
+.order-form {
+    display: block;
 }
 
-.checkbox-grid {
+.order-form .two-col-form {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-    gap: 10px;
-    margin: 8px 0 14px;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px 24px;
+    align-items: start;
+    margin-bottom: 18px;
 }
 
-.checkbox-card {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    border: 1px solid #e5e7eb;
-    padding: 10px 12px;
-    border-radius: 12px;
-    background: #f9fafb;
-    font-weight: 600;
+.order-form .checkbox-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin: 8px 0 18px;
+}
+
+.order-form .checkbox-card {
+    max-width: 360px;
 }
 
 .checkbox-card input {
     width: auto;
-    margin: 0 8px 0 0;
+    margin: 0;
+    flex-shrink: 0;
+}
+
+.checkbox-card span {
+    margin-left: auto;
+    font-weight: bold;
+    color: var(--primary);
 }

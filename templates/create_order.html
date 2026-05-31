@@ -31,30 +31,56 @@
         </select>
 
         <div class="two-col-form">
-            <div>
-                <label for="size_option">Size</label>
-                <select id="size_option" name="size_option" required>
-                    {% for size, surcharge in size_options.items() %}
-                    <option value="{{ size }}">{{ size }}{% if surcharge > 0 %} (+${{ "%.2f"|format(surcharge) }}){% elif surcharge < 0 %} (-${{ "%.2f"|format(-surcharge) }}){% endif %}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div>
-                <label for="milk_option">Milk / Dietary Option</label>
-                <select id="milk_option" name="milk_option" required>
-                    {% for milk, surcharge in milk_options.items() %}
-                    <option value="{{ milk }}">{{ milk }}{% if surcharge > 0 %} (+${{ "%.2f"|format(surcharge) }}){% endif %}</option>
-                    {% endfor %}
-                </select>
-            </div>
-        </div>
+           {% if modifier_options.show_size or modifier_options.show_milk or modifier_options.extra_options %}
+<p class="muted small-text">{{ modifier_options.note }}</p>
+{% endif %}
 
-        <label>Extras / Modifiers</label>
-        <div class="checkbox-grid">
-            {% for extra, surcharge in extra_options.items() %}
-            <label class="checkbox-card"><input type="checkbox" name="extras" value="{{ extra }}"> {{ extra }} <span>+${{ "%.2f"|format(surcharge) }}</span></label>
+{% if modifier_options.show_size or modifier_options.show_milk %}
+<div class="two-col-form">
+
+    {% if modifier_options.show_size %}
+    <div>
+        <label for="size_option">Drink Size</label>
+        <select id="size_option" name="size_option" required>
+            {% for size, surcharge in modifier_options.size_options.items() %}
+            <option value="{{ size }}">
+                {{ size }}
+                {% if surcharge > 0 %}(+${{ "%.2f"|format(surcharge) }}){% endif %}
+                {% if surcharge < 0 %}(-${{ "%.2f"|format(-surcharge) }}){% endif %}
+            </option>
             {% endfor %}
-        </div>
+        </select>
+    </div>
+    {% endif %}
+
+    {% if modifier_options.show_milk %}
+    <div>
+        <label for="milk_option">Milk Option</label>
+        <select id="milk_option" name="milk_option" required>
+            {% for milk, surcharge in modifier_options.milk_options.items() %}
+            <option value="{{ milk }}">
+                {{ milk }}
+                {% if surcharge > 0 %}(+${{ "%.2f"|format(surcharge) }}){% endif %}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+    {% endif %}
+
+    </div>
+    {% endif %}
+
+    {% if modifier_options.extra_options %}
+    <label>{% if item.category == 'Food' %}Food Options{% else %}Drink Extras{% endif %}</label>
+    <div class="checkbox-grid">
+    {% for extra, surcharge in modifier_options.extra_options.items() %}
+    <label class="checkbox-card">
+        <input type="checkbox" name="extras" value="{{ extra }}">
+        {{ extra }} <span>+${{ "%.2f"|format(surcharge) }}</span>
+    </label>
+    {% endfor %}
+    </div>
+    {% endif %}
 
         <label for="payment_method">Payment Method</label>
         <select id="payment_method" name="payment_method" required>

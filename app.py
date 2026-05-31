@@ -42,12 +42,77 @@ SIZE_OPTIONS = {
 
 EXTRA_OPTIONS = {
     "Extra Shot": 1.00,
-    "Vanilla Syrup": 0.70,
-    "Caramel Syrup": 0.70,
-    "Hazelnut Syrup": 0.70,
-    "Whipped Cream": 0.80,
-    "Gluten Free Bread": 1.00,
+    "Vanilla Syrup": 0.50,
+    "Caramel Syrup": 0.50,
+    "Hazelnut Syrup": 0.50,
+    "Whipped Cream": 0.50,
+    "Gluten Free Bread": 2.00,
 }
+
+DRINK_CATEGORIES = {"Coffee", "Cold Drinks"}
+FOOD_CATEGORIES = {"Food"}
+
+DRINK_EXTRA_OPTIONS = {
+    "Extra Shot": EXTRA_OPTIONS["Extra Shot"],
+    "Vanilla Syrup": EXTRA_OPTIONS["Vanilla Syrup"],
+    "Caramel Syrup": EXTRA_OPTIONS["Caramel Syrup"],
+    "Hazelnut Syrup": EXTRA_OPTIONS["Hazelnut Syrup"],
+    "Whipped Cream": EXTRA_OPTIONS["Whipped Cream"],
+}
+
+FOOD_EXTRA_OPTIONS = {
+    "Gluten Free Bread": EXTRA_OPTIONS["Gluten Free Bread"],
+}
+
+NO_SIZE_OPTIONS = {"Regular": 0.00}
+NO_MILK_OPTIONS = {"None / Not Applicable": 0.00}
+
+def get_modifier_options(category: str):
+    """Return only the modifiers that make sense for the selected menu category."""
+    if category in DRINK_CATEGORIES:
+        return {
+            "show_size": True,
+            "show_milk": True,
+            "size_options": SIZE_OPTIONS,
+            "milk_options": MILK_OPTIONS,
+            "extra_options": DRINK_EXTRA_OPTIONS,
+            "note": "Choose drink size, milk, and optional coffee extras.",
+        }
+    if category in FOOD_CATEGORIES:
+        return {
+            "show_size": False,
+            "show_milk": False,
+            "size_options": NO_SIZE_OPTIONS,
+            "milk_options": NO_MILK_OPTIONS,
+            "extra_options": FOOD_EXTRA_OPTIONS,
+            "note": "Food items only show realistic food modifiers.",
+        }
+    return {
+        "show_size": False,
+        "show_milk": False,
+        "size_options": NO_SIZE_OPTIONS,
+        "milk_options": NO_MILK_OPTIONS,
+        "extra_options": {},
+        "note": "No drink modifiers apply to this item.",
+    }
+
+
+def clean_modifiers_for_category(category: str, size_option: str, milk_option: str, selected_extras):
+    """Ignore size, milk and extras that do not apply to the menu category."""
+    options = get_modifier_options(category)
+    if not options["show_size"]:
+        size_option = "Regular"
+    elif size_option not in options["size_options"]:
+        size_option = "Regular"
+
+    if not options["show_milk"]:
+        milk_option = "None / Not Applicable"
+    elif milk_option not in options["milk_options"]:
+        milk_option = "Full Cream"
+
+    allowed_extras = options["extra_options"]
+    valid_extras = [extra for extra in selected_extras if extra in allowed_extras]
+    return size_option, milk_option, valid_extras, ", ".join(valid_extras), options
 
 PAYMENT_METHODS = {
     "Pay at Counter": {"surcharge_rate": 0.00, "paid_immediately": False},
@@ -195,6 +260,13 @@ def customer_total_spend(phone: str) -> float:
         ).fetchone()
     return float(row["spend"] or 0)
 
+@app.route("/")
+def home():
+    with closing(get_db_connection()) as conn:
+        available_items = conn.execute("SELECT COUNT(*) AS count FROM menu_items WHERE is_available = 1").fetchone()["count"]
+        total_orders = conn.execute("SELECT COUNT(*) AS count FROM orders").fetchone()["count"]
+    return render_template("home.html", available_items=available_items, total_orders=total_orders)
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -271,7 +343,10 @@ def create_order(item_id):
         table_number = request.form.get("table_number", "Takeaway").strip() or "Takeaway"
         size_option = request.form.get("size_option", "Regular").strip() or "Regular"
         milk_option = request.form.get("milk_option", "Full Cream").strip() or "Full Cream"
-        selected_extras, extras_label = normalise_extras(request.form.getlist("extras"))
+        selected_extras = request.form.getlist("extras")
+        size_option, milk_option, selected_extras, extras_label = clean_modifiers_for_category(
+        item["category"], size_option, milk_option, selected_extras
+        )
         valid_tables = {"Takeaway"} | {str(i) for i in range(1, 21)}
 
         if table_number not in valid_tables:
@@ -303,7 +378,14 @@ def create_order(item_id):
             return redirect(url_for("create_order", item_id=item_id))
 
         order_code = build_unique_order_code()
-        pricing = calculate_order_pricing(float(item["price"]), quantity, size_option, milk_option, selected_extras, payment_method)
+        pricing = calculate_order_pricing(
+         float(item["price"]),
+           quantity,
+           size_option,
+           milk_option,
+           selected_extras,
+           payment_method
+        )
         payment_status = "Paid" if PAYMENT_METHODS[payment_method]["paid_immediately"] else "Unpaid"
         transaction_ref = ""
 
@@ -315,7 +397,7 @@ def create_order(item_id):
                      milk_option, extras, modifiers_total, subtotal, service_fee, gst_amount, total_price, notes, status,
                         payment_method, payment_status, payment_reference
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     order_code,
@@ -334,10 +416,10 @@ def create_order(item_id):
                     pricing["gst_amount"],
                     pricing["total_price"],
                     notes,
+                    "pending",
                     payment_method,
                     payment_status,
                     transaction_ref,
-                    "pending",
                 ),
             )
             conn.commit()
@@ -351,7 +433,11 @@ def create_order(item_id):
         flash(f"Order placed successfully. Your order code is {order_code}.", "success")
         return redirect(url_for("track_order", order_code=order_code))
 
-    return render_template("create_order.html", item=item)
+    return render_template(
+    "create_order.html",
+    item=item,
+    modifier_options=get_modifier_options(item["category"])
+    )
 
 
 @app.route("/track", methods=["GET", "POST"])
