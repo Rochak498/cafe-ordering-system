@@ -1,84 +1,117 @@
-# Daxxi140 Cafe Ordering System — Iteration 2
+# Daxxi140 Cafe Ordering System — Iteration 3 Final Product
 
-## Overview
-This is the Iteration 2 product for ISYS3008 Project B. It extends the Iteration 1 MVP by adding role-based staff access, menu administration, order editing/cancellation, enhanced reporting, and better operational controls.
+This is the final Iteration 3 version of the Daxxi140 Cafe Ordering System for ISYS3008 Project B.
 
-## Main Features
+## Final Product Features
 
-### Customer Facing Feature
-- Customer home page
-- Customer menu browsing
-- Menu item images and descriptions
-- Category filtering and keyword search
-- QR-code menu access page
-- Customer order placement
-- Table number or takeaway selection
-- Unique order code generation
-- Order tracking by order code
-- Estimated preparation time and status messages
+### Customer-facing features
+- Browse menu with images, descriptions, categories, and prices
+- Search and filter menu items
+- Scan QR code to open the customer menu
+- Select table number or takeaway
+- Add order notes
+- Select payment method
+- Receive unique order code
+- Track order status
+- View printable digital receipt
+- Submit customer feedback/rating
+- View table availability
 
 ### Staff/owner features
-- Staff login and logout
-- Protected staff queue, dashboard, CSV export, and menu admin pages
-- Order search and status filter
-- Order status updates
-- Edit order details including customer name, table number, quantity, notes, and status
-- Cancel orders while keeping records for traceability
-- Add menu item with category, name, price, description, and image path/URL
-- Hide/show menu items without deleting records
-- CSV export of order records
-
-### Dashboard features
-- Total orders
-- Total revenue
-- Average order value
-- Status counts
-- Top-selling items
-- Category sales
-- Daily revenue summary
-- Orders by hour
-- Active table slots
-- Recent orders
-
-## Demo Accounts
-- Username: `staff` / Password: `staff123`
-- Username: `admin` / Password: `admin123`
+- Staff/admin login
+- Protected staff pages
+- Staff order queue
+- Search/filter orders by code, customer, item, status, or table
+- Update order status
+- Edit orders
+- Cancel orders while keeping traceability
+- Kitchen display screen
+- Menu administration with item image/description
+- Add/hide/show menu items
+- Dashboard analytics
+- CSV export
+- Feedback summary
+- Loyalty points summary
+- Active table slot visibility
 
 ## Technologies
 - Python 3.x
 - Flask 3.0.2
-- qrcode[pil] 7.4.2
 - SQLite
 - HTML5
 - CSS3
+- qrcode 7.4.2
 
 ## Setup
+
+1. Install dependencies:
+
 ```bash
 pip install -r requirements.txt
+```
+
+2. Initialise/reset database:
+
+```bash
 python init_db.py
+```
+
+3. Run the application:
+
+```bash
 python app.py
 ```
 
-Open:
+4. Open:
+
 ```text
 http://127.0.0.1:5000
 ```
-## Important Database Note
-If you have an old database from Iteration 1 or earlier Iteration 2 work, delete `database.db` first, then run:
-```bash
-python init_db.py
-```
 
-## QR Code Note
-The QR page is available at:
+## Demo accounts
+
 ```text
-http://127.0.0.1:5000/qr
+staff / staff123
+admin / admin123
 ```
-It generates a QR code that links to the customer menu. For a real deployment, host the app online or run it on a shared local network so customer devices can access the same URL.
 
-## Iteration Tag
-Tag the final commit as:
+## Suggested demo flow
+1. Show QR code page
+2. Open customer menu
+3. Browse item images/descriptions
+4. Check table availability
+5. Place dine-in order with table number and payment method
+6. Track order
+7. View receipt
+8. Login as staff
+9. Open kitchen display
+10. Update/edit/cancel order
+11. Add/hide menu item
+12. Show dashboard analytics, feedback, and loyalty
+13. Export CSV
+
+## Iteration tag
+Tag final commit as:
+
 ```text
-iteration-2
+iteration-3-final
 ```
 
+## Iteration 3 realism upgrades
+
+This final version includes realistic café/POS features:
+
+- item images and descriptions
+- table number or takeaway selection
+- size options
+- milk/dietary options with surcharges
+- extras/modifiers such as extra shot and syrups
+- payment methods: Pay at Counter, Cash, EFTPOS/Card, Apple Pay / Google Pay
+- simulated transaction records for paid orders
+- card/mobile surcharge calculation
+- subtotal, GST included, surcharge and total calculation
+- transaction register for staff/owner
+- improved staff queue with payment and modifier details
+- improved dashboard with payment method and modifier revenue summaries
+
+Demo recommendation: create a large coffee order with oat milk, extra shot, and EFTPOS/Card payment to demonstrate realistic café pricing and transactions.
