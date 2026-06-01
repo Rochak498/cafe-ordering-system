@@ -169,6 +169,7 @@ def inject_helpers():
         "extra_options": EXTRA_OPTIONS,
         "payment_methods": PAYMENT_METHODS,
         "promo_codes": PROMO_CODES,
+        "cart_count": sum(item.get("quantity", 0) for item in session.get("cart", [])),
         }
 
 def generate_order_code(length: int = 8) -> str:
@@ -531,13 +532,14 @@ def create_order(item_id):
             conn.execute(
                 """
                 INSERT INTO orders (
-                    order_code, customer_name, customer_phone, table_number, item_name, quantity, unit_price, size_option,
+                    order_code, order_group, customer_name, customer_phone, table_number, item_name, quantity, unit_price, size_option,
                     milk_option, extras, modifiers_total, subtotal, discount_amount, service_fee, gst_amount, total_price, notes, requested_time, promo_code, status,
                     payment_method, payment_status, payment_reference, payment_provider, payment_last4, payment_authorisation
                 )
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
+                    order_code,
                     order_code,
                     customer_name,
                     customer_phone,
@@ -740,6 +742,7 @@ def export_orders():
     writer = csv.writer(output)
     writer.writerow([
         "Order Code",
+        "Order Group",
         "Customer Name",
         "Phone",
         "Table/Service",
@@ -770,6 +773,7 @@ def export_orders():
     for row in rows:
         writer.writerow([
             row["order_code"],
+            row["order_group"] if "order_group" in row.keys() else "",
             row["customer_name"],
             row["customer_phone"],
             row["table_number"],
@@ -976,6 +980,163 @@ def transactions():
         """).fetchone()
     return render_template("transactions.html", transactions=rows, totals=totals)
 
+
+
+# -----------------------------
+# Real café multi-item cart flow
+# -----------------------------
+def cart_items():
+    return session.setdefault("cart", [])
+
+
+def save_cart(items):
+    session["cart"] = items
+    session.modified = True
+
+
+def get_cart_with_details():
+    items = cart_items()
+    detailed = []
+    subtotal = 0.0
+    with closing(get_db_connection()) as conn:
+        for index, entry in enumerate(items):
+            row = conn.execute("SELECT * FROM menu_items WHERE id = ?", (entry.get("item_id"),)).fetchone()
+            if not row:
+                continue
+            quantity = int(entry.get("quantity", 1))
+            line_total = round(float(row["price"]) * quantity, 2)
+            subtotal += line_total
+            detailed.append({"index": index, "item": row, "quantity": quantity, "line_total": line_total})
+    return detailed, round(subtotal, 2)
+
+
+@app.route("/cart")
+def cart():
+    detailed, subtotal = get_cart_with_details()
+    return render_template("cart.html", cart_items=detailed, subtotal=subtotal)
+
+
+@app.route("/cart/add/<int:item_id>", methods=["POST"])
+def add_to_cart(item_id):
+    try:
+        quantity = int(request.form.get("quantity", "1"))
+        if quantity < 1 or quantity > 20:
+            raise ValueError
+    except ValueError:
+        flash("Please choose a valid quantity between 1 and 20.", "error")
+        return redirect(url_for("menu"))
+    with closing(get_db_connection()) as conn:
+        item = conn.execute("SELECT * FROM menu_items WHERE id = ? AND is_available = 1 AND stock_count > 0", (item_id,)).fetchone()
+    if not item:
+        flash("That item is not currently available.", "error")
+        return redirect(url_for("menu"))
+    items = cart_items()
+    for entry in items:
+        if entry.get("item_id") == item_id:
+            entry["quantity"] = min(int(entry.get("quantity", 1)) + quantity, 20)
+            break
+    else:
+        items.append({"item_id": item_id, "quantity": quantity})
+    save_cart(items)
+    flash(f"{item['name']} added to your order.", "success")
+    return redirect(url_for("menu"))
+
+
+@app.route("/cart/remove/<int:index>", methods=["POST"])
+def remove_from_cart(index):
+    items = cart_items()
+    if 0 <= index < len(items):
+        items.pop(index)
+        save_cart(items)
+        flash("Item removed from cart.", "success")
+    return redirect(url_for("cart"))
+
+
+@app.route("/cart/clear", methods=["POST"])
+def clear_cart():
+    save_cart([])
+    flash("Cart cleared.", "success")
+    return redirect(url_for("menu"))
+
+
+@app.route("/checkout", methods=["GET", "POST"])
+def checkout():
+    detailed, subtotal = get_cart_with_details()
+    if not detailed:
+        flash("Your cart is empty. Please add menu items first.", "error")
+        return redirect(url_for("menu"))
+
+    if request.method == "POST":
+        customer_name = request.form.get("customer_name", "").strip()
+        customer_phone = request.form.get("customer_phone", "").strip()
+        table_number = request.form.get("table_number", "Takeaway").strip() or "Takeaway"
+        requested_time = request.form.get("requested_time", "ASAP").strip() or "ASAP"
+        payment_method = request.form.get("payment_method", "Credit/Debit Card").strip()
+        notes = request.form.get("notes", "").strip()
+        promo_code = normalise_promo_code(request.form.get("promo_code", ""))
+
+        if not customer_name or len(customer_name) < 2:
+            flash("Please enter a customer name with at least 2 characters.", "error")
+            return redirect(url_for("checkout"))
+        if table_number not in ({"Takeaway"} | {str(i) for i in range(1, 21)}):
+            flash("Please choose a valid table or takeaway option.", "error")
+            return redirect(url_for("checkout"))
+        if promo_code and promo_code not in PROMO_CODES:
+            flash("Invalid promo code. Try WELCOME10, STUDENT10 or COFFEE5.", "error")
+            return redirect(url_for("checkout"))
+
+        payment_ok, payment_error, payment_meta = validate_online_payment(request.form, payment_method)
+        if not payment_ok:
+            flash(payment_error, "error")
+            return redirect(url_for("checkout"))
+
+        # Re-check stock at checkout time.
+        for entry in detailed:
+            if int(entry["item"]["stock_count"]) < int(entry["quantity"]):
+                flash(f"Only {entry['item']['stock_count']} left for {entry['item']['name']}.", "error")
+                return redirect(url_for("cart"))
+
+        group_code = "ORD-" + secrets.token_hex(3).upper()
+        created_codes = []
+        total_paid = 0.0
+
+        with closing(get_db_connection()) as conn:
+            for entry in detailed:
+                item = entry["item"]
+                quantity = int(entry["quantity"] )
+                order_code = build_unique_order_code()
+                # Cart checkout uses base item pricing; detailed drink modifiers remain available through the customise flow.
+                pricing = calculate_order_pricing(float(item["price"]), quantity, "Regular", "None / Not Applicable", [], payment_method, promo_code)
+                total_paid += pricing["total_price"]
+                conn.execute("""
+                    INSERT INTO orders (
+                        order_code, order_group, customer_name, customer_phone, table_number, item_name, quantity, unit_price,
+                        size_option, milk_option, extras, modifiers_total, subtotal, discount_amount, service_fee, gst_amount,
+                        total_price, notes, requested_time, promo_code, status, payment_method, payment_status, payment_reference,
+                        payment_provider, payment_last4, payment_authorisation
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    order_code, group_code, customer_name, customer_phone, table_number, item["name"], quantity, float(item["price"]),
+                    "Regular", "None / Not Applicable", "", pricing["modifiers_total"], pricing["subtotal"], pricing["discount_amount"],
+                    pricing["service_fee"], pricing["gst_amount"], pricing["total_price"], notes, requested_time, promo_code, "Pending",
+                    payment_method, "Paid", "", payment_meta.get("payment_provider", ""), payment_meta.get("payment_last4", ""),
+                    payment_meta.get("payment_authorisation", "")
+                ))
+                conn.execute("UPDATE menu_items SET stock_count = MAX(stock_count - ?, 0) WHERE id = ?", (quantity, item["id"]))
+                created_codes.append(order_code)
+            conn.commit()
+
+        transaction_ref = create_transaction(group_code, payment_method, round(total_paid, 2), 0.0, "Paid")
+        if transaction_ref:
+            with closing(get_db_connection()) as conn:
+                for code in created_codes:
+                    conn.execute("UPDATE orders SET payment_reference = ? WHERE order_code = ?", (transaction_ref, code))
+                conn.commit()
+        save_cart([])
+        flash(f"Order paid online and sent to the café. Group code: {group_code}", "success")
+        return redirect(url_for("track_order", order_code=created_codes[0]))
+
+    return render_template("checkout.html", cart_items=detailed, subtotal=subtotal)
 
 @app.route("/dashboard")
 @login_required

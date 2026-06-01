@@ -100,13 +100,46 @@
         <label for="promo_code">Promo Code (optional)</label>
         <input id="promo_code" name="promo_code" placeholder="WELCOME10, STUDENT10, COFFEE5">
 
-        <label for="payment_method">Payment Method</label>
-        <select id="payment_method" name="payment_method" required>
+        <label for="payment_method">Online Payment Method</label>
+        <select id="payment_method" name="payment_method" required onchange="togglePaymentFields()">
             {% for method, config in payment_methods.items() %}
-            <option value="{{ method }}">{{ method }}{% if config.surcharge_rate > 0 %} ({{ "%.1f"|format(config.surcharge_rate * 100) }}% surcharge){% endif %}</option>
+            <option value="{{ method }}">{{ method }}{% if config.surcharge_rate > 0 %} ({{ "%.1f"|format(config.surcharge_rate * 100) }}% online processing fee){% endif %}</option>
             {% endfor %}
         </select>
+        <p class="muted small-text">Online orders must be paid before they are sent to the café queue. Full card details are validated for the demo but are not stored.</p>
 
+        <div id="card-fields" class="payment-panel">
+            <h3>Credit / Debit Card Details</h3>
+            <label for="cardholder_name">Cardholder Name</label>
+            <input type="text" id="cardholder_name" name="cardholder_name" placeholder="Name on card">
+
+            <label for="card_number">Card Number</label>
+            <input type="text" id="card_number" name="card_number" inputmode="numeric" autocomplete="cc-number" placeholder="4111 1111 1111 1111" maxlength="23">
+
+            <div class="two-col-form">
+                <div>
+                    <label for="card_expiry">Expiry</label>
+                    <input type="text" id="card_expiry" name="card_expiry" placeholder="MM/YY" maxlength="5">
+                </div>
+                <div>
+                    <label for="card_cvv">CVV</label>
+                    <input type="password" id="card_cvv" name="card_cvv" inputmode="numeric" placeholder="123" maxlength="4">
+                </div>
+            </div>
+        </div>
+
+        <div id="wallet-fields" class="payment-panel" style="display:none;">
+            <h3>Apple Pay / Google Pay</h3>
+            <label for="wallet_name">Mobile Wallet</label>
+            <select id="wallet_name" name="wallet_name">
+                <option value="Apple Pay">Apple Pay</option>
+                <option value="Google Pay">Google Pay</option>
+            </select>
+            <label class="checkbox-card wallet-authorise">
+                <input type="checkbox" name="wallet_confirmed" value="yes">
+                I confirm the payment has been authorised in the mobile wallet simulation.
+            </label>
+        </div>
 
         <label for="quantity">Quantity</label>
         <input type="number" id="quantity" name="quantity" min="1" value="1" required>
