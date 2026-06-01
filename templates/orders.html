@@ -51,7 +51,7 @@
                     <tr>
                         <td>{{ order.order_code }}</td>
                         <td>{{ order.customer_name }}<div class="muted small-text">{{ order.customer_phone or 'No phone' }}</div></td>
-                        <td>{{ order.service_type }}</td>
+                        <td>{{ order.service_type }}<div class="muted small-text">{{ order.requested_time or 'ASAP' }}</div></td>
                         <td class="left-text">
                             <strong>{{ order.item_name }}</strong>
                             <div class="muted small-text">{{ order.size_option }} • {{ order.milk_option }}{% if order.extras %} • {{ order.extras }}{% endif %}</div>
@@ -65,7 +65,7 @@
                             <div class="muted small-text">Modifiers ${{ "%.2f"|format(order.modifiers_total or 0) }} • Surcharge ${{ "%.2f"|format(order.service_fee or 0) }}</div>
                             <div class="muted small-text">GST incl. ${{ "%.2f"|format(order.gst_amount or 0) }}</div>
                         </td>
-                        <td>{{ order.payment_method }}<div class="muted small-text">{{ order.payment_status }}</div>{% if order.payment_reference %}<div class="muted small-text">{{ order.payment_reference }}</div>{% endif %}</td>
+                        <td>{{ order.payment_method }}<div class="muted small-text">{{ order.payment_status }}</div><div class="muted small-text">{{ order.payment_provider or 'Online' }}{% if order.payment_last4 %} • {% if order.payment_last4 == 'WALLET' %}Wallet{% else %}•••• {{ order.payment_last4 }}{% endif %}{% endif %}</div>{% if order.payment_reference %}<div class="muted small-text">{{ order.payment_reference }}</div>{% endif %}</td>
                         <td>
                             <span class="status-badge status-{{ order.status|lower }}">{{ order.status }}</span>
                             <div class="muted small-text">{{ order.status_help }}</div>

@@ -13,11 +13,11 @@
         <p><strong>Estimated prep:</strong> {{ item.prep_minutes }} minutes</p>
         <p><strong>Stock left:</strong> {{ item.stock_count }}</p>
         <div class="price-note">
-            <strong>Real cafe pricing:</strong> alternative milks, extras, large size, promo codes, and card/mobile payments may add surcharges.
+            <strong>Real café pricing:</strong> alternative milks, large sizes, extras, promo codes, and card/mobile payments may change the final total.
         </div>
     </div>
 
-    <form method="POST" class="form-panel">
+    <form method="POST" class="form-panel order-form">
         <label for="customer_name">Customer Name</label>
         <input type="text" id="customer_name" name="customer_name" minlength="2" required>
 
@@ -32,7 +32,7 @@
             {% endfor %}
         </select>
 
-         <label for="requested_time">Requested Time</label>
+        <label for="requested_time">Requested Time</label>
         <select id="requested_time" name="requested_time">
             <option value="ASAP">ASAP</option>
             <option value="In 10 minutes">In 10 minutes</option>
@@ -40,62 +40,53 @@
             <option value="In 30 minutes">In 30 minutes</option>
         </select>
 
-         {% if modifier_options.show_size or modifier_options.show_milk or modifier_options.extra_options %}
+        {% if modifier_options.show_size or modifier_options.show_milk or modifier_options.extra_options %}
         <p class="muted small-text">{{ modifier_options.note }}</p>
         {% endif %}
 
+        {% if modifier_options.show_size or modifier_options.show_milk %}
         <div class="two-col-form">
-           {% if modifier_options.show_size or modifier_options.show_milk or modifier_options.extra_options %}
-<p class="muted small-text">{{ modifier_options.note }}</p>
-{% endif %}
+            {% if modifier_options.show_size %}
+            <div>
+                <label for="size_option">Drink Size</label>
+                <select id="size_option" name="size_option" required>
+                    {% for size, surcharge in modifier_options.size_options.items() %}
+                    <option value="{{ size }}">
+                        {{ size }}
+                        {% if surcharge > 0 %}(+${{ "%.2f"|format(surcharge) }}){% endif %}
+                        {% if surcharge < 0 %}(-${{ "%.2f"|format(-surcharge) }}){% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
 
-{% if modifier_options.show_size or modifier_options.show_milk %}
-<div class="two-col-form">
+            {% if modifier_options.show_milk %}
+            <div>
+                <label for="milk_option">Milk Option</label>
+                <select id="milk_option" name="milk_option" required>
+                    {% for milk, surcharge in modifier_options.milk_options.items() %}
+                    <option value="{{ milk }}">
+                        {{ milk }}{% if surcharge > 0 %} (+${{ "%.2f"|format(surcharge) }}){% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
 
-    {% if modifier_options.show_size %}
-    <div>
-        <label for="size_option">Drink Size</label>
-        <select id="size_option" name="size_option" required>
-            {% for size, surcharge in modifier_options.size_options.items() %}
-            <option value="{{ size }}">
-                {{ size }}
-                {% if surcharge > 0 %}(+${{ "%.2f"|format(surcharge) }}){% endif %}
-                {% if surcharge < 0 %}(-${{ "%.2f"|format(-surcharge) }}){% endif %}
-            </option>
+        {% if modifier_options.extra_options %}
+        <label>{% if item.category == 'Food' %}Food Options{% else %}Drink Extras{% endif %}</label>
+        <div class="checkbox-grid">
+            {% for extra, surcharge in modifier_options.extra_options.items() %}
+            <label class="checkbox-card">
+                <input type="checkbox" name="extras" value="{{ extra }}">
+                {{ extra }} <span>+${{ "%.2f"|format(surcharge) }}</span>
+            </label>
             {% endfor %}
-        </select>
-    </div>
-    {% endif %}
-
-    {% if modifier_options.show_milk %}
-    <div>
-        <label for="milk_option">Milk Option</label>
-        <select id="milk_option" name="milk_option" required>
-            {% for milk, surcharge in modifier_options.milk_options.items() %}
-            <option value="{{ milk }}">
-                {{ milk }}
-                {% if surcharge > 0 %}(+${{ "%.2f"|format(surcharge) }}){% endif %}
-            </option>
-            {% endfor %}
-        </select>
-    </div>
-    {% endif %}
-
-    </div>
-    {% endif %}
-
-    {% if modifier_options.extra_options %}
-    <label>{% if item.category == 'Food' %}Food Options{% else %}Drink Extras{% endif %}</label>
-    <div class="checkbox-grid">
-    {% for extra, surcharge in modifier_options.extra_options.items() %}
-    <label class="checkbox-card">
-        <input type="checkbox" name="extras" value="{{ extra }}">
-        {{ extra }} <span>+${{ "%.2f"|format(surcharge) }}</span>
-    </label>
-    {% endfor %}
-    </div>
-    {% endif %}
-
+        </div>
+        {% endif %}
 
         <label for="promo_code">Promo Code (optional)</label>
         <input id="promo_code" name="promo_code" placeholder="WELCOME10, STUDENT10, COFFEE5">
@@ -142,12 +133,28 @@
         </div>
 
         <label for="quantity">Quantity</label>
-        <input type="number" id="quantity" name="quantity" min="1" value="1" required>
+        <input type="number" id="quantity" name="quantity" min="1" max="50" value="1" required>
 
         <label for="notes">Order Notes</label>
-        <textarea id="notes" name="notes" rows="4" placeholder="Optional notes, e.g. oat milk, no sugar, extra hot"></textarea>
+        <textarea id="notes" name="notes" rows="4" placeholder="Optional notes, e.g. extra hot, no onion, sauce on side"></textarea>
 
         <button type="submit">Submit Order</button>
     </form>
 </section>
+
+<script>
+function togglePaymentFields() {
+    const method = document.getElementById('payment_method').value;
+    const cardFields = document.getElementById('card-fields');
+    const walletFields = document.getElementById('wallet-fields');
+    if (method === 'Apple Pay / Google Pay') {
+        cardFields.style.display = 'none';
+        walletFields.style.display = 'block';
+    } else {
+        cardFields.style.display = 'block';
+        walletFields.style.display = 'none';
+    }
+}
+document.addEventListener('DOMContentLoaded', togglePaymentFields);
+</script>
 {% endblock %}

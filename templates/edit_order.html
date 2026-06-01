@@ -8,7 +8,7 @@
         <p><strong>Item:</strong> {{ order.item_name }}</p>
         <p><strong>Base Unit Price:</strong> ${{ "%.2f"|format(order.unit_price) }}</p>
         <p><strong>Current Total:</strong> ${{ "%.2f"|format(order.total_price) }}</p>
-        <p class="muted">Staff can correct customer details, table/service option, quantity, modifiers, payment, notes, and order status.</p>
+        <p class="muted">Staff can correct customer details, table/service option, quantity, modifiers, online payment status, notes, and order status. Full card details are never displayed or edited.</p>
     </div>
     <form method="POST" class="form-panel">
         <label for="customer_name">Customer Name</label>
@@ -93,12 +93,13 @@
         <label for="promo_code">Promo Code</label>
         <input id="promo_code" name="promo_code" value="{{ order.promo_code or '' }}" placeholder="WELCOME10, STUDENT10, COFFEE5">
 
-        <label for="payment_method">Payment Method</label>
+        <label for="payment_method">Online Payment Method</label>
         <select id="payment_method" name="payment_method">
             {% for method, config in payment_methods.items() %}
-            <option value="{{ method }}" {% if order.payment_method == method %}selected{% endif %}>{{ method }}{% if config.surcharge_rate > 0 %} ({{ "%.1f"|format(config.surcharge_rate * 100) }}% surcharge){% endif %}</option>
+            <option value="{{ method }}" {% if order.payment_method == method %}selected{% endif %}>{{ method }}{% if config.surcharge_rate > 0 %} ({{ "%.1f"|format(config.surcharge_rate * 100) }}% online processing fee){% endif %}</option>
             {% endfor %}
         </select>
+        <p class="muted small-text">For security, staff can update the payment method/status but cannot view or edit full card details.</p>
 
         <label for="status">Status</label>
         <select id="status" name="status">
@@ -109,7 +110,7 @@
 
         <label for="payment_status">Payment Status</label>
         <select id="payment_status" name="payment_status">
-            {% for payment_status in ['Unpaid', 'Paid', 'Refunded'] %}
+            {% for payment_status in ['Paid', 'Refunded'] %}
             <option value="{{ payment_status }}" {% if order.payment_status == payment_status %}selected{% endif %}>{{ payment_status }}</option>
             {% endfor %}
         </select>

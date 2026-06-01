@@ -6,66 +6,29 @@
         <div>
             <p class="eyebrow">Owner / Staff Maintenance</p>
             <h2>Menu Administration</h2>
-            <p>Add realistic menu items with description and image path/URL, then control item availability for customer ordering.</p>
+            <p>Add realistic menu items with descriptions, images, dietary tags, preparation time and stock levels.</p>
         </div>
     </div>
 
-     <form method="POST" class="admin-menu-form">
-        <div>
-            <label for="category">Category</label>
-            <input id="category" name="category" placeholder="Coffee, Food, Dessert" required>
-        </div>
-        <div>
-            <label for="name">Item name</label>
-            <input id="name" name="name" placeholder="e.g. Mocha" required>
-        </div>
-        <div>
-            <label for="price">Price</label>
-            <input id="price" name="price" type="number" step="0.01" min="0" required>
-        </div>
-        <div>
-            <label for="prep_minutes">Prep mins</label>
-            <input id="prep_minutes" name="prep_minutes" type="number" min="1" value="8" required>
-        </div>
-        <div>
-            <label for="stock_count">Stock count</label>
-            <input id="stock_count" name="stock_count" type="number" min="0" value="20" required>
-        </div>
-        <div>
-            <label for="dietary_tags">Dietary tags</label>
-            <input id="dietary_tags" name="dietary_tags" placeholder="Vegetarian, gluten-free, contains nuts">
-        </div>
-        <div>
-            <label for="image_url">Image path or URL</label>
-            <input id="image_url" name="image_url" placeholder="images/latte.jpg or https://...">
-        </div>
-        <div class="wide-field">
-            <label for="description">Description</label>
-            <textarea id="description" name="description" rows="3" placeholder="Describe taste, ingredients, or serving style" required></textarea>
-        </div>
-        <div class="filter-actions">
-            <button type="submit">Add Item</button>
-        </div>
+    <form method="POST" class="admin-menu-form">
+        <div><label for="category">Category</label><input id="category" name="category" placeholder="Coffee, Food, Dessert" required></div>
+        <div><label for="name">Item name</label><input id="name" name="name" placeholder="e.g. Mocha" required></div>
+        <div><label for="price">Price</label><input id="price" name="price" type="number" step="0.01" min="0" required></div>
+        <div><label for="prep_minutes">Prep mins</label><input id="prep_minutes" name="prep_minutes" type="number" min="1" value="8" required></div>
+        <div><label for="stock_count">Stock count</label><input id="stock_count" name="stock_count" type="number" min="0" value="20" required></div>
+        <div><label for="dietary_tags">Dietary tags</label><input id="dietary_tags" name="dietary_tags" placeholder="Vegetarian, gluten-free, contains nuts"></div>
+        <div><label for="image_url">Image path or URL</label><input id="image_url" name="image_url" placeholder="images/latte.jpg or https://..."></div>
+        <div class="wide-field"><label for="description">Description</label><textarea id="description" name="description" rows="3" placeholder="Describe taste, ingredients, and serving style" required></textarea></div>
+        <div class="filter-actions"><button type="submit">Add Item</button></div>
     </form>
-    </section>
+</section>
 
-    <section class="card">
+<section class="card">
     <h3>Current Menu Items</h3>
     <div class="table-wrap">
         <table>
             <thead>
-                <tr>
-                    <th>Image</th>
-                    <th>Category</th>
-                    <th>Name</th>
-                    <th>Description</th>
-                    <th>Dietary</th>
-                    <th>Prep</th>
-                    <th>Stock</th>
-                    <th>Price</th>
-                    <th>Availability</th>
-                    <th>Action</th>
-                </tr>
+                <tr><th>Image</th><th>Category</th><th>Name</th><th>Description</th><th>Dietary</th><th>Prep</th><th>Stock</th><th>Price</th><th>Availability</th><th>Actions</th></tr>
             </thead>
             <tbody>
                 {% for item in items %}
@@ -96,5 +59,3 @@
     </div>
 </section>
 {% endblock %}
-
-    

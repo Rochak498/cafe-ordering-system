@@ -3,16 +3,15 @@
 {% block content %}
 <section class="card">
     <div class="section-head">
-        <div class="section-head">
         <div>
             <p class="eyebrow">Customer Ordering</p>
             <h2>Customer Menu</h2>
-            <p>Browse cafe items with images, descriptions, prices, and availability before placing an order.</p>
+            <p>Browse café items with photos, descriptions, dietary notes, prep time, live availability and real pricing options.</p>
         </div>
         <a class="button-link secondary" href="{{ url_for('qr_page') }}">Show QR Code</a>
     </div>
-    
-     <form method="GET" class="filter-grid compact">
+
+    <form method="GET" class="filter-grid compact">
         <div>
             <label for="category">Category</label>
             <select id="category" name="category">
@@ -22,17 +21,14 @@
                 {% endfor %}
             </select>
         </div>
-
         <div>
-            <label for="search">Search by name, category, or description</label>
-            <input id="search" name="search" type="text" value="{{ search }}" placeholder="Search coffee, wrap, chocolate...">
+            <label for="search">Search by name, category, dietary note, or description</label>
+            <input id="search" name="search" type="text" value="{{ search }}" placeholder="Search coffee, vegetarian, wrap, chocolate...">
         </div>
-        <div class="filter-actions">
-            <button type="submit">Apply</button>
-        </div>
+        <div class="filter-actions"><button type="submit">Apply</button></div>
     </form>
 
-     <div class="menu-grid menu-grid-rich">
+    <div class="menu-grid menu-grid-rich">
         {% for item in menu_items %}
         <article class="menu-item menu-card">
             <img class="menu-image" src="{{ menu_image_src(item.image_url) }}" alt="{{ item.name }}">
@@ -43,9 +39,15 @@
                 {% if item.dietary_tags %}<p class="tag-row">{{ item.dietary_tags }}</p>{% endif %}
                 <p class="muted small-text">Estimated prep: {{ item.prep_minutes }} mins • Stock: {{ item.stock_count }}</p>
                 <p class="price">${{ "%.2f"|format(item.price) }}</p>
-                <a class="button-link" href="{{ url_for('create_order', item_id=item.id) }}">Order Now</a>
+                <div class="menu-actions">
+                    <form method="POST" action="{{ url_for('add_to_cart', item_id=item.id) }}" class="quick-add">
+                        <input type="number" name="quantity" min="1" max="20" value="1" aria-label="Quantity">
+                        <button type="submit">Add to Cart</button>
+                    </form>
+                    <a class="button-link secondary" href="{{ url_for('create_order', item_id=item.id) }}">Customise & Pay</a>
+                </div>
             </div>
-             </article>
+        </article>
         {% else %}
         <p>No menu items match the current filter.</p>
         {% endfor %}

@@ -395,8 +395,7 @@ button.danger:hover { background: #991b1b; }
     font-weight: bold;
     color: var(--primary);
 }
-
-/* Additional styles for iteration 4 */
+/* HD final polish: more realistic cafe look */
 :root {
     --primary: #8b5a2b;
     --primary-hover: #6f421f;
@@ -431,4 +430,50 @@ button.danger:hover { background: #991b1b; }
 .menu-card:hover {
     transform: translateY(-3px);
     box-shadow: 0 12px 28px rgba(0,0,0,.12);
+}
+
+.payment-panel {
+    margin: 14px 0;
+    padding: 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    background: #f8fafc;
+}
+
+.payment-panel h3 {
+    margin-top: 0;
+    margin-bottom: 12px;
+}
+
+.wallet-authorise {
+    margin-top: 12px;
+}
+
+/* Real café checkout/cart polish */
+.menu-actions { display: grid; gap: 10px; margin-top: 12px; }
+.quick-add { display: grid; grid-template-columns: 90px 1fr; gap: 8px; align-items: center; }
+.quick-add input { margin: 0; }
+.checkout-summary, .order-summary-card {
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 18px;
+    background: #fffaf3;
+    margin-top: 16px;
+}
+.summary-line { display: flex; justify-content: space-between; gap: 16px; padding: 8px 0; }
+.summary-line.total { font-size: 1.1rem; }
+.secondary-button {
+    background: #6b7280;
+    color: white;
+    border: 0;
+    border-radius: 10px;
+    padding: 10px 14px;
+    cursor: pointer;
+}
+.payment-panel {
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px;
+    margin: 12px 0;
 }

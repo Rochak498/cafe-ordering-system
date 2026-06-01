@@ -32,6 +32,9 @@
         <div><strong>GST included:</strong> ${{ "%.2f"|format(order.gst_amount or 0) }}</div>
         <div><strong>Total:</strong> ${{ "%.2f"|format(order.total_price) }}</div>
         <div><strong>Payment:</strong> {{ order.payment_method }} — {{ order.payment_status }}</div>
+        <div><strong>Provider:</strong> {{ order.payment_provider or 'Online' }}</div>
+        <div><strong>Card/Wallet:</strong> {% if order.payment_last4 == 'WALLET' %}Wallet authorised{% elif order.payment_last4 %}•••• {{ order.payment_last4 }}{% else %}Not available{% endif %}</div>
+        <div><strong>Auth:</strong> {{ order.payment_authorisation or order.payment_reference or 'Pending' }}</div>
         <div><strong>Requested time:</strong> {{ order.requested_time or 'ASAP' }}</div>
         <div><strong>Status:</strong> <span class="status-badge status-{{ order.status|lower }}">{{ order.status }}</span></div>
     </div>

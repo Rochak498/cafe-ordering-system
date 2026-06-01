@@ -1,47 +1,31 @@
 {% extends "base.html" %}
 
 {% block content %}
-<section class="hero card">
+<section class="hero card cafe-hero">
     <div>
-        <p class="eyebrow">Iteration 3 Product</p>
-        <h2>Role-Based Cafe Ordering and Management System</h2>
+        <p class="eyebrow">Final Iteration Product</p>
+        <h2>Daxxi140 Smart Cafe Ordering System</h2>
         <p>
-            A realistic cafe ordering and POS-style web app with QR ordering, dine-in table selection, payment methods, promo codes,
+            A realistic café ordering and POS-style web app with QR ordering, dine-in table selection, payment methods, promo codes,
             loyalty tracking, kitchen display, customer feedback, inventory controls and owner analytics.
         </p>
         <div class="hero-actions">
             <a class="button-link" href="{{ url_for('menu') }}">Browse Customer Menu</a>
             <a class="button-link secondary" href="{{ url_for('qr_page') }}">Scan QR Menu</a>
-            {% if current_user %}
-                <a class="button-link secondary" href="{{ url_for('orders') }}">Open Staff Queue</a>
-            {% else %}
-                <a class="button-link secondary" href="{{ url_for('login') }}">Staff Login</a>
-            {% endif %}
+            {% if current_user %}<a class="button-link secondary" href="{{ url_for('orders') }}">Open Staff Queue</a>{% else %}<a class="button-link secondary" href="{{ url_for('login') }}">Staff Login</a>{% endif %}
         </div>
     </div>
     <div class="hero-stats">
-        <div>
-            <span class="stat-value">{{ available_items }}</span>
-            <span class="stat-label">Available menu items</span>
-        </div>
-        <div>
-            <span class="stat-value">{{ active_tables }}</span>
-            <span class="stat-label">Active dine-in tables</span>
-        </div>
-        <div>
-            <span class="stat-value">{{ low_stock }}</span>
-            <span class="stat-label">Low stock items</span>
-        </div>
-        <div>
-            <span class="stat-value">{{ total_orders }}</span>
-            <span class="stat-label">Orders recorded</span>
-        </div>
+        <div><span class="stat-value">{{ available_items }}</span><span class="stat-label">Available items</span></div>
+        <div><span class="stat-value">{{ active_tables }}</span><span class="stat-label">Active dine-in tables</span></div>
+        <div><span class="stat-value">{{ low_stock }}</span><span class="stat-label">Low stock items</span></div>
+        <div><span class="stat-value">{{ total_orders }}</span><span class="stat-label">Orders recorded</span></div>
     </div>
 </section>
 
 <section class="card info-grid">
     <div>
-        <h3>Customer workflow</h3>
+        <h3>Customer experience</h3>
         <ol>
             <li>Scan QR or open the web app.</li>
             <li>Browse menu items with photos, dietary notes and prep times.</li>
@@ -50,7 +34,7 @@
         </ol>
     </div>
     <div>
-        <h3>Staff/owner workflow</h3>
+        <h3>Staff and owner operations</h3>
         <ol>
             <li>Log in to protected staff tools.</li>
             <li>Manage orders, kitchen workflow, payments and cancellations.</li>

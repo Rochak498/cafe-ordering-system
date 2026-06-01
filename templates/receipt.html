@@ -18,6 +18,9 @@
         <div><strong>Phone:</strong> {{ order.customer_phone or 'Not provided' }}</div>
         <div><strong>Table / Service:</strong> {{ order.service_type }}</div>
         <div><strong>Payment:</strong> {{ order.payment_method }} — {{ order.payment_status }}</div>
+        <div><strong>Provider:</strong> {{ order.payment_provider or 'Online' }}</div>
+        <div><strong>Card/Wallet:</strong> {% if order.payment_last4 == 'WALLET' %}Wallet authorised{% elif order.payment_last4 %}•••• {{ order.payment_last4 }}{% else %}Not available{% endif %}</div>
+        <div><strong>Auth:</strong> {{ order.payment_authorisation or order.payment_reference or 'Pending' }}</div>
         <div><strong>Requested time:</strong> {{ order.requested_time or 'ASAP' }}</div>
         <div><strong>Item:</strong> {{ order.item_name }}</div>
         <div><strong>Quantity:</strong> {{ order.quantity }}</div>
@@ -30,7 +33,7 @@
         <div><strong>Payment surcharge:</strong> ${{ "%.2f"|format(order.service_fee or 0) }}</div>
         <div><strong>GST included:</strong> ${{ "%.2f"|format(order.gst_amount or 0) }}</div>
         <div><strong>Total:</strong> ${{ "%.2f"|format(order.total_price) }}</div>
-        <div><strong>Payment:</strong> {{ order.payment_method }} — {{ order.payment_status }}</div>\
+        <div><strong>Payment:</strong> {{ order.payment_method }} — {{ order.payment_status }}</div>
         <div><strong>Requested time:</strong> {{ order.requested_time or 'ASAP' }}</div>
     </div>
 

@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="card split-layout">
+    <div>
+        <p class="eyebrow">Secure Online Checkout</p>
+        <h2>Checkout</h2>
+        <p>Review your items, choose table/takeaway, apply a promo code and pay online before the order is sent to the café queue.</p>
+        <div class="order-summary-card">
+            {% for entry in cart_items %}
+            <div class="summary-line"><span>{{ entry.quantity }} × {{ entry.item.name }}</span><strong>${{ "%.2f"|format(entry.line_total) }}</strong></div>
+            {% endfor %}
+            <hr>
+            <div class="summary-line total"><span>Cart subtotal</span><strong>${{ "%.2f"|format(subtotal) }}</strong></div>
+        </div>
+        <p class="price-note"><strong>Demo payment cards:</strong> use 4111 1111 1111 1111, expiry 12/26, CVV 123.</p>
+    </div>
+
+    <form method="POST" class="form-panel order-form">
+        <h3>Customer Details</h3>
+        <label for="customer_name">Customer Name</label>
+        <input type="text" id="customer_name" name="customer_name" minlength="2" required>
+
+        <label for="customer_phone">Customer Phone (for receipt/loyalty)</label>
+        <input type="tel" id="customer_phone" name="customer_phone" placeholder="04XXXXXXXX">
+
+        <div class="two-col-form">
+            <div>
+                <label for="table_number">Table / Service</label>
+                <select id="table_number" name="table_number" required>
+                    <option value="Takeaway">Takeaway</option>
+                    {% for number in range(1, 21) %}<option value="{{ number }}">Table {{ number }}</option>{% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="requested_time">Requested Time</label>
+                <select id="requested_time" name="requested_time">
+                    <option value="ASAP">ASAP</option>
+                    <option value="In 10 minutes">In 10 minutes</option>
+                    <option value="In 20 minutes">In 20 minutes</option>
+                    <option value="In 30 minutes">In 30 minutes</option>
+                </select>
+            </div>
+        </div>
+
+        <label for="promo_code">Promo Code</label>
+        <input id="promo_code" name="promo_code" placeholder="WELCOME10, STUDENT10, COFFEE5">
+
+        <label for="notes">Order Notes</label>
+        <textarea id="notes" name="notes" rows="3" placeholder="Group order notes, allergies, pickup instructions"></textarea>
+
+        <h3>Online Payment</h3>
+        <label for="payment_method">Payment Method</label>
+        <select id="payment_method" name="payment_method" required onchange="togglePaymentFields()">
+            {% for method, config in payment_methods.items() %}
+            <option value="{{ method }}">{{ method }}{% if config.surcharge_rate > 0 %} ({{ "%.1f"|format(config.surcharge_rate * 100) }}% processing fee){% endif %}</option>
+            {% endfor %}
+        </select>
+
+        <div id="card-fields" class="payment-panel">
+            <label for="cardholder_name">Cardholder Name</label>
+            <input type="text" id="cardholder_name" name="cardholder_name" placeholder="Name on card">
+            <label for="card_number">Card Number</label>
+            <input type="text" id="card_number" name="card_number" inputmode="numeric" placeholder="4111 1111 1111 1111" maxlength="23">
+            <div class="two-col-form">
+                <div><label for="card_expiry">Expiry</label><input type="text" id="card_expiry" name="card_expiry" placeholder="MM/YY" maxlength="5"></div>
+                <div><label for="card_cvv">CVV</label><input type="password" id="card_cvv" name="card_cvv" inputmode="numeric" placeholder="123" maxlength="4"></div>
+            </div>
+        </div>
+        <div id="wallet-fields" class="payment-panel" style="display:none;">
+            <label for="wallet_name">Mobile Wallet</label>
+            <select id="wallet_name" name="wallet_name"><option value="Apple Pay">Apple Pay</option><option value="Google Pay">Google Pay</option></select>
+            <label class="checkbox-card wallet-authorise"><input type="checkbox" name="wallet_confirmed" value="yes"> I confirm the mobile wallet payment has been authorised.</label>
+        </div>
+
+        <button type="submit">Pay Online & Send Order</button>
+    </form>
+</section>
+<script>
+function togglePaymentFields() {
+    const method = document.getElementById('payment_method').value;
+    document.getElementById('card-fields').style.display = method === 'Apple Pay / Google Pay' ? 'none' : 'block';
+    document.getElementById('wallet-fields').style.display = method === 'Apple Pay / Google Pay' ? 'block' : 'none';
+}
+document.addEventListener('DOMContentLoaded', togglePaymentFields);
+</script>
+{% endblock %}

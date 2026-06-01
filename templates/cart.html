@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="card">
+    <div class="section-head">
+        <div>
+            <p class="eyebrow">Customer Cart</p>
+            <h2>Your Café Order</h2>
+            <p>Build a multi-item café order before paying securely online.</p>
+        </div>
+        <a class="button-link secondary" href="{{ url_for('menu') }}">Add More Items</a>
+    </div>
+
+    {% if cart_items %}
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Item</th><th>Category</th><th>Qty</th><th>Line Total</th><th>Action</th></tr></thead>
+            <tbody>
+            {% for entry in cart_items %}
+                <tr>
+                    <td class="left-text"><strong>{{ entry.item.name }}</strong><div class="muted small-text">{{ entry.item.description }}</div></td>
+                    <td>{{ entry.item.category }}</td>
+                    <td>{{ entry.quantity }}</td>
+                    <td>${{ "%.2f"|format(entry.line_total) }}</td>
+                    <td>
+                        <form method="POST" action="{{ url_for('remove_from_cart', index=entry.index) }}">
+                            <button class="danger" type="submit">Remove</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="checkout-summary">
+        <h3>Cart Subtotal: ${{ "%.2f"|format(subtotal) }}</h3>
+        <p class="muted">Discounts, GST and online payment processing fee are calculated during checkout.</p>
+        <div class="hero-actions">
+            <a class="button-link" href="{{ url_for('checkout') }}">Proceed to Secure Checkout</a>
+            <form method="POST" action="{{ url_for('clear_cart') }}"><button class="secondary-button" type="submit">Clear Cart</button></form>
+        </div>
+    </div>
+    {% else %}
+        <p>Your cart is empty.</p>
+        <a class="button-link" href="{{ url_for('menu') }}">Browse Menu</a>
+    {% endif %}
+</section>
+{% endblock %}
