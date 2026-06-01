@@ -115,10 +115,16 @@ def clean_modifiers_for_category(category: str, size_option: str, milk_option: s
     return size_option, milk_option, valid_extras, ", ".join(valid_extras), options
 
 PAYMENT_METHODS = {
-    "Pay at Counter": {"surcharge_rate": 0.00, "paid_immediately": False},
-    "Cash": {"surcharge_rate": 0.00, "paid_immediately": True},
-    "EFTPOS/Card": {"surcharge_rate": 0.015, "paid_immediately": True},
-    "Apple Pay / Google Pay": {"surcharge_rate": 0.015, "paid_immediately": True},
+    # Online-only payment options for the customer ordering flow.
+    # No full card details are stored; only safe receipt metadata such as last 4 digits.
+    "Credit/Debit Card": {"surcharge_rate": 0.015, "paid_immediately": True},
+    "Apple Pay / Google Pay": {"surcharge_rate": 0.012, "paid_immediately": True},
+}
+
+CARD_BRAND_PREFIXES = {
+    "4": "Visa",
+    "5": "Mastercard",
+    "3": "American Express",
 }
 
 PROMO_CODES = {
@@ -126,6 +132,7 @@ PROMO_CODES = {
     "STUDENT10": {"discount_rate": 0.10, "label": "Student 10% discount"},
     "COFFEE5": {"discount_rate": 0.05, "label": "Coffee lover 5% discount"},
 }
+
 
 def get_db_connection():
     conn = sqlite3.connect(DB_PATH)
@@ -162,7 +169,7 @@ def inject_helpers():
         "extra_options": EXTRA_OPTIONS,
         "payment_methods": PAYMENT_METHODS,
         "promo_codes": PROMO_CODES,
-    }
+        }
 
 def generate_order_code(length: int = 8) -> str:
     return secrets.token_hex(length // 2).upper()
@@ -197,6 +204,7 @@ def normalise_extras(selected_extras):
     valid = [extra for extra in selected_extras if extra in EXTRA_OPTIONS]
     return valid, ", ".join(valid)
 
+
 def normalise_promo_code(promo_code: str) -> str:
     return (promo_code or "").strip().upper()
 
@@ -205,8 +213,96 @@ def get_promo_discount_rate(promo_code: str) -> float:
     promo_code = normalise_promo_code(promo_code)
     return PROMO_CODES.get(promo_code, {}).get("discount_rate", 0.0)
 
-def calculate_order_pricing(base_price: float, quantity: int, size_option: str, milk_option: str, extras_list, payment_method: str):
-    """Calculate realistic café order pricing including modifiers and card/mobile surcharges."""
+
+def only_digits(value: str) -> str:
+    return "".join(ch for ch in (value or "") if ch.isdigit())
+
+
+def detect_card_brand(card_number: str) -> str:
+    digits = only_digits(card_number)
+    if digits.startswith("34") or digits.startswith("37"):
+        return "American Express"
+    return CARD_BRAND_PREFIXES.get(digits[:1], "Card")
+
+
+def luhn_valid(card_number: str) -> bool:
+    """Validate a card number using the Luhn checksum. This is a simulation, not a real payment gateway."""
+    digits = only_digits(card_number)
+    if len(digits) < 13 or len(digits) > 19:
+        return False
+    checksum = 0
+    reverse_digits = digits[::-1]
+    for index, char in enumerate(reverse_digits):
+        number = int(char)
+        if index % 2 == 1:
+            number *= 2
+            if number > 9:
+                number -= 9
+        checksum += number
+    return checksum % 10 == 0
+
+
+def expiry_valid(expiry: str) -> bool:
+    """Validate MM/YY format without storing it."""
+    expiry = (expiry or "").strip()
+    if "/" not in expiry:
+        return False
+    month_text, year_text = expiry.split("/", 1)
+    if not (month_text.isdigit() and year_text.isdigit()):
+        return False
+    month = int(month_text)
+    year = int(year_text)
+    if month < 1 or month > 12:
+        return False
+    # Academic demo rule: accept current/future year in 20YY format.
+    return year >= 26
+
+
+def validate_online_payment(form, payment_method: str):
+    """Return safe payment metadata after validating online-only payment input."""
+    if payment_method not in PAYMENT_METHODS:
+        return False, "Please choose a valid online payment method.", {}
+
+    if payment_method == "Credit/Debit Card":
+        cardholder = form.get("cardholder_name", "").strip()
+        card_number = form.get("card_number", "").strip()
+        expiry = form.get("card_expiry", "").strip()
+        cvv = only_digits(form.get("card_cvv", ""))
+        digits = only_digits(card_number)
+
+        if len(cardholder) < 2:
+            return False, "Cardholder name is required for card payments.", {}
+        if not luhn_valid(digits):
+            return False, "Please enter a valid credit/debit card number.", {}
+        if not expiry_valid(expiry):
+            return False, "Please enter a valid expiry date in MM/YY format.", {}
+        if len(cvv) not in (3, 4):
+            return False, "Please enter a valid CVV.", {}
+
+        return True, "", {
+            "payment_provider": detect_card_brand(digits),
+            "payment_last4": digits[-4:],
+            "payment_authorisation": "AUTH-" + secrets.token_hex(3).upper(),
+        }
+
+    if payment_method == "Apple Pay / Google Pay":
+        wallet_name = form.get("wallet_name", "Apple Pay").strip() or "Apple Pay"
+        wallet_confirmed = form.get("wallet_confirmed") == "yes"
+        if wallet_name not in {"Apple Pay", "Google Pay"}:
+            return False, "Please select Apple Pay or Google Pay.", {}
+        if not wallet_confirmed:
+            return False, "Please confirm the mobile wallet payment authorisation.", {}
+        return True, "", {
+            "payment_provider": wallet_name,
+            "payment_last4": "WALLET",
+            "payment_authorisation": "WALLET-" + secrets.token_hex(3).upper(),
+        }
+
+    return False, "Unsupported online payment method.", {}
+
+
+def calculate_order_pricing(base_price: float, quantity: int, size_option: str, milk_option: str, extras_list, payment_method: str, promo_code: str = ""):
+    """Calculate realistic café order pricing including modifiers, promotions, GST and payment surcharges."""
     size_surcharge = SIZE_OPTIONS.get(size_option, 0.00)
     milk_surcharge = MILK_OPTIONS.get(milk_option, 0.00)
     extras_surcharge = sum(EXTRA_OPTIONS.get(extra, 0.00) for extra in extras_list)
@@ -215,9 +311,9 @@ def calculate_order_pricing(base_price: float, quantity: int, size_option: str, 
     subtotal_before_discount = round(item_price * quantity, 2)
     promo_code = normalise_promo_code(promo_code)
     discount_rate = get_promo_discount_rate(promo_code)
-    discount_amount = round(subtotal_before_discount * discount_rate, 2)
+    discount_amount = round(subtotal_before_discount * discount_rate, 2) if promo_code else 0.0
     discounted_subtotal = round(max(subtotal_before_discount - discount_amount, 0), 2)
-    surcharge_rate = PAYMENT_METHODS.get(payment_method, PAYMENT_METHODS["Pay at Counter"])["surcharge_rate"]
+    surcharge_rate = PAYMENT_METHODS.get(payment_method, next(iter(PAYMENT_METHODS.values())))["surcharge_rate"]
     service_fee = round(discounted_subtotal * surcharge_rate, 2)
     total_price = round(discounted_subtotal + service_fee, 2)
     gst_amount = round(total_price / 11, 2)  # GST is included in consumer prices.
@@ -279,6 +375,7 @@ def customer_total_spend(phone: str) -> float:
         ).fetchone()
     return float(row["spend"] or 0)
 
+
 def get_menu_category_for_item(item_name: str) -> str:
     with closing(get_db_connection()) as conn:
         row = conn.execute("SELECT category FROM menu_items WHERE name = ?", (item_name,)).fetchone()
@@ -322,7 +419,7 @@ def menu():
     category = request.args.get("category", "All")
     search = request.args.get("search", "").strip()
 
-    query = "SELECT * FROM menu_items WHERE is_available = 1"
+    query = "SELECT * FROM menu_items WHERE is_available = 1 AND stock_count > 0"
     params = []
 
     if category and category != "All":
@@ -339,7 +436,7 @@ def menu():
     with closing(get_db_connection()) as conn:
         menu_items = conn.execute(query, params).fetchall()
         categories = conn.execute(
-            "SELECT DISTINCT category FROM menu_items WHERE is_available = 1 ORDER BY category"
+            "SELECT DISTINCT category FROM menu_items WHERE is_available = 1 AND stock_count > 0 ORDER BY category"
         ).fetchall()
 
     return render_template(
@@ -365,15 +462,19 @@ def create_order(item_id):
         quantity_raw = request.form.get("quantity", "").strip()
         notes = request.form.get("notes", "").strip()
         customer_phone = request.form.get("customer_phone", "").strip()
-        payment_method = request.form.get("payment_method", "Pay at Counter").strip() or "Pay at Counter"
+        payment_method = request.form.get("payment_method", "Credit/Debit Card").strip() or "Credit/Debit Card"
+        payment_ok, payment_error, payment_meta = validate_online_payment(request.form, payment_method)
+        if not payment_ok:
+            flash(payment_error, "error")
+            return redirect(url_for("create_order", item_id=item_id))
         promo_code = normalise_promo_code(request.form.get("promo_code", ""))
         requested_time = request.form.get("requested_time", "ASAP").strip() or "ASAP"
         table_number = request.form.get("table_number", "Takeaway").strip() or "Takeaway"
         size_option = request.form.get("size_option", "Regular").strip() or "Regular"
         milk_option = request.form.get("milk_option", "Full Cream").strip() or "Full Cream"
         selected_extras = request.form.getlist("extras")
-        size_option, milk_option, selected_extras, extras_label, modifier_option = clean_modifiers_for_category(
-        item["category"], size_option, milk_option, selected_extras
+        size_option, milk_option, selected_extras, extras_label, modifier_options = clean_modifiers_for_category(
+            item["category"], size_option, milk_option, selected_extras
         )
         valid_tables = {"Takeaway"} | {str(i) for i in range(1, 21)}
 
@@ -384,7 +485,7 @@ def create_order(item_id):
         if not customer_name or not quantity_raw:
             flash("Customer name and quantity are required.", "error")
             return redirect(url_for("create_order", item_id=item_id))
-        
+
         if promo_code and promo_code not in PROMO_CODES:
             flash("Invalid promo code. Try WELCOME10, STUDENT10 or leave it blank.", "error")
             return redirect(url_for("create_order", item_id=item_id))
@@ -409,9 +510,13 @@ def create_order(item_id):
             flash("Quantity must be a whole number greater than 0.", "error")
             return redirect(url_for("create_order", item_id=item_id))
 
+        if item["stock_count"] is not None and int(item["stock_count"]) < quantity:
+            flash(f"Only {item['stock_count']} left for {item['name']}. Please reduce quantity or choose another item.", "error")
+            return redirect(url_for("create_order", item_id=item_id))
+
         order_code = build_unique_order_code()
         pricing = calculate_order_pricing(
-         float(item["price"]),
+           float(item["price"]),
            quantity,
            size_option,
            milk_option,
@@ -426,11 +531,11 @@ def create_order(item_id):
             conn.execute(
                 """
                 INSERT INTO orders (
-                    order_code, customer_name, Customer_phone ,table_number,item_name, quantity,unit_price, size_option,
-                     milk_option, extras, modifiers_total, subtotal, discount_amount,service_fee, gst_amount, total_price, notes, requested_time, promo_code, status,
-                        payment_method, payment_status, payment_reference
+                    order_code, customer_name, customer_phone, table_number, item_name, quantity, unit_price, size_option,
+                    milk_option, extras, modifiers_total, subtotal, discount_amount, service_fee, gst_amount, total_price, notes, requested_time, promo_code, status,
+                    payment_method, payment_status, payment_reference, payment_provider, payment_last4, payment_authorisation
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     order_code,
@@ -452,10 +557,13 @@ def create_order(item_id):
                     notes,
                     requested_time,
                     promo_code,
-                    "pending",
+                    "Pending",
                     payment_method,
                     payment_status,
                     transaction_ref,
+                    payment_meta["payment_provider"],
+                    payment_meta["payment_last4"],
+                    payment_meta["payment_authorisation"],
                 ),
             )
             conn.execute("UPDATE menu_items SET stock_count = MAX(stock_count - ?, 0) WHERE id = ?", (quantity, item_id))
@@ -557,8 +665,8 @@ def edit_order(order_id):
         quantity_raw = request.form.get("quantity", "").strip()
         notes = request.form.get("notes", "").strip()
         customer_phone = request.form.get("customer_phone", "").strip()
-        payment_status = request.form.get("payment_status", order["payment_status"] if "payment_status" in order.keys() else "Unpaid")
-        payment_method = request.form.get("payment_method", order["payment_method"] if "payment_method" in order.keys() else "Pay at Counter")
+        payment_status = request.form.get("payment_status", order["payment_status"] if "payment_status" in order.keys() else "Paid")
+        payment_method = request.form.get("payment_method", order["payment_method"] if "payment_method" in order.keys() else "Credit/Debit Card")
         promo_code = normalise_promo_code(request.form.get("promo_code", order["promo_code"] if "promo_code" in order.keys() else ""))
         requested_time = request.form.get("requested_time", order["requested_time"] if "requested_time" in order.keys() else "ASAP").strip() or "ASAP"
         table_number = request.form.get("table_number", order["table_number"]).strip() or "Takeaway"
@@ -578,7 +686,6 @@ def edit_order(order_id):
         if promo_code and promo_code not in PROMO_CODES:
             flash("Invalid promo code selected.", "error")
             return redirect(url_for("edit_order", order_id=order_id))
-        
         if payment_method not in PAYMENT_METHODS or size_option not in SIZE_OPTIONS or milk_option not in MILK_OPTIONS:
             flash("Please select valid payment, size and milk options.", "error")
             return redirect(url_for("edit_order", order_id=order_id))
@@ -587,8 +694,8 @@ def edit_order(order_id):
         if not customer_name or len(customer_name) < 2:
             flash("Customer name must contain at least 2 characters.", "error")
             return redirect(url_for("edit_order", order_id=order_id))
-        if payment_status not in {"Unpaid", "Paid", "Refunded"}:
-            flash("Invalid payment status selected.", "error")
+        if payment_status not in {"Paid", "Refunded"}:
+            flash("Invalid online payment status selected.", "error")
             return redirect(url_for("edit_order", order_id=order_id))
         if status not in VALID_STATUSES:
             flash("Invalid status selected.", "error")
@@ -600,16 +707,16 @@ def edit_order(order_id):
         except ValueError:
             flash("Quantity must be between 1 and 50.", "error")
             return redirect(url_for("edit_order", order_id=order_id))
-        pricing = calculate_order_pricing(float(order["unit_price"]), quantity, size_option, milk_option, selected_extras, payment_method)
+        pricing = calculate_order_pricing(float(order["unit_price"]), quantity, size_option, milk_option, selected_extras, payment_method, promo_code)
         with closing(get_db_connection()) as conn:
             conn.execute(
                 "UPDATE orders SET customer_name = ?, customer_phone = ?, table_number = ?, quantity = ?, size_option = ?, milk_option = ?, extras = ?, modifiers_total = ?, subtotal = ?, discount_amount = ?, service_fee = ?, gst_amount = ?, total_price = ?, notes = ?, requested_time = ?, promo_code = ?, status = ?, payment_status = ?, payment_method = ? WHERE id = ?",
-                (customer_name, customer_phone, table_number, quantity, size_option, milk_option, selected_extras, pricing["modifiers_total"], pricing["subtotal"], pricing["discount_amount"], pricing["service_fee"], pricing["gst_amount"], pricing["total_price"], notes, requested_time, promo_code, status, payment_status, payment_method, order_id),
+                (customer_name, customer_phone, table_number, quantity, size_option, milk_option, extras_label, pricing["modifiers_total"], pricing["subtotal"], pricing["discount_amount"], pricing["service_fee"], pricing["gst_amount"], pricing["total_price"], notes, requested_time, promo_code, status, payment_status, payment_method, order_id),
             )
             conn.commit()
         flash("Order updated successfully.", "success")
         return redirect(url_for("orders"))
-    return render_template("edit_order.html", order=order, valid_statuses=VALID_STATUSES)
+    return render_template("edit_order.html", order=order, valid_statuses=VALID_STATUSES, modifier_options=get_modifier_options(get_menu_category_for_item(order["item_name"])))
 
 @app.route("/orders/<int:order_id>/cancel", methods=["POST"])
 @login_required
@@ -651,8 +758,11 @@ def export_orders():
         "Total Price",
         "Requested Time",
         "Payment Method",
+        "Payment Provider",
+        "Payment Last 4",
+        "Authorisation",
         "Payment Status",
-        "payment Ref",
+        "Payment Ref",
         "Status",
         "Created At",
     ])
@@ -672,12 +782,15 @@ def export_orders():
             row["modifiers_total"],
             row["subtotal"],
             row["discount_amount"],
-            row["promo code"],
+            row["promo_code"],
             row["service_fee"],
             row["gst_amount"],  
             row["total_price"],
             row["requested_time"],
             row["payment_method"],
+            row["payment_provider"] if "payment_provider" in row.keys() else "",
+            row["payment_last4"] if "payment_last4" in row.keys() else "",
+            row["payment_authorisation"] if "payment_authorisation" in row.keys() else "",
             row["payment_status"],
             row["payment_reference"],
             row["status"],
@@ -715,7 +828,7 @@ def admin_menu():
             flash("Price, prep time and stock must be valid positive numbers.", "error")
             return redirect(url_for("admin_menu"))
         with closing(get_db_connection()) as conn:
-            conn.execute("INSERT INTO menu_items (category, name, price, description, image_url, is_available) VALUES (?, ?, ?, ?, ?, 1)", (category, name, price, description, image_url))
+            conn.execute("INSERT INTO menu_items (category, name, price, description, image_url, dietary_tags, prep_minutes, stock_count, is_available) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)", (category, name, price, description, image_url, dietary_tags, prep_minutes, stock_count))
             conn.commit()
         flash("Menu item added successfully.", "success")
         return redirect(url_for("admin_menu"))
@@ -736,6 +849,7 @@ def toggle_menu_item(item_id):
             conn.commit()
             flash("Menu item availability updated.", "success")
     return redirect(url_for("admin_menu"))
+
 
 @app.route("/admin/menu/<int:item_id>/stock", methods=["POST"])
 @login_required
@@ -803,7 +917,7 @@ def feedback(order_code):
                 (order_code.upper(), rating, comment),
             )
             conn.commit()
-        flash("Thank you for your feedback. Your response helps improve cafe service.", "success")
+        flash("Thank you for your feedback. Your response helps improve café service.", "success")
         return redirect(url_for("track_order", order_code=order_code.upper()))
     return render_template("feedback.html", order=order)
 

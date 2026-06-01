@@ -3,16 +3,16 @@ import sqlite3
 DB_PATH = "database.db"
 
 MENU_SEED = [
-    ("Coffee", "Latte", 5.50, "Smooth espresso with steamed milk and a light foam finish.", "images/latte.jpg", 1),
-    ("Coffee", "Cappuccino", 5.20, "Classic espresso topped with thick foam and cocoa dusting.", "images/cappucino.jpg", 1),
-    ("Coffee", "Flat White", 5.30, "Rich espresso blended with velvety microfoam.", "images/flat_white.jpg", 1),
-    ("Cold Drinks", "Iced Coffee", 6.00, "Chilled espresso over ice with milk and optional sweetness.", "images/ice-coffee.jpg", 1),
-    ("Cold Drinks", "Iced Chocolate", 6.20, "Cold chocolate drink served over ice with creamy texture.", "images/ice-choclate.jpg", 1),
-    ("Food", "Chicken Wrap", 9.50, "Grilled chicken, fresh salad and sauce wrapped for quick lunch.", "images/chicken_wrap.jpg", 1),
-    ("Food", "Veggie Toastie", 8.50, "Toasted sandwich with vegetables, cheese and savoury filling.", "images/veggie-toastie.jpg", 1),
-    ("Food", "Banana Bread", 4.80, "Moist banana bread slice, ideal with coffee.", "images/banana_bread.jpg", 1),
-    ("Dessert", "Blueberry Muffin", 4.50, "Soft muffin with blueberry pieces and a lightly sweet finish.", "images/blueberry-muffin.jpg", 1),
-    ("Dessert", "Chocolate Brownie", 5.00, "Dense chocolate brownie with a rich cocoa flavour.", "images/brownie.jpg", 1),
+     ("Coffee", "Latte", 5.50, "Smooth espresso with steamed milk and a light foam finish.", "images/latte.jpg", "Vegetarian", 7, 30, 1),
+    ("Coffee", "Cappuccino", 5.20, "Classic espresso topped with thick foam and cocoa dusting.", "images/cappucino.jpg", "Vegetarian", 7, 30, 1),
+    ("Coffee", "Flat White", 5.30, "Rich espresso blended with velvety microfoam.", "images/flat_white.jpg", "Vegetarian", 6, 30, 1),
+    ("Cold Drinks", "Iced Coffee", 6.00, "Chilled espresso over ice with milk and optional sweetness.", "images/ice-coffee.jpg", "Vegetarian", 8, 25, 1),
+    ("Cold Drinks", "Iced Chocolate", 6.20, "Cold chocolate drink served over ice with creamy texture.", "images/ice-choclate.jpg", "Vegetarian", 6, 25, 1),
+    ("Food", "Chicken Wrap", 9.50, "Grilled chicken, fresh salad and sauce wrapped for quick lunch.", "images/chicken_wrap.jpg", "Contains gluten", 12, 18, 1),
+    ("Food", "Veggie Toastie", 8.50, "Toasted sandwich with vegetables, cheese and savoury filling.", "images/veggie-toastie.jpg", "Vegetarian, contains gluten", 10, 18, 1),
+    ("Food", "Banana Bread", 4.80, "Moist banana bread slice, ideal with coffee.", "images/banana_bread.jpg", "Vegetarian", 4, 20, 1),
+    ("Dessert", "Blueberry Muffin", 4.50, "Soft muffin with blueberry pieces and a lightly sweet finish.", "images/blueberry-muffin.jpg", "Vegetarian", 3, 20, 1),
+    ("Dessert", "Chocolate Brownie", 5.00, "Dense chocolate brownie with a rich cocoa flavour.", "images/brownie.jpg", "Vegetarian", 3, 20, 1),
 ]
 USER_SEED = [
     ("staff", "staff123", "Staff Member", "staff"),
@@ -104,6 +104,12 @@ if "gst_amount" not in existing_order_columns:
     cur.execute("ALTER TABLE orders ADD COLUMN gst_amount REAL NOT NULL DEFAULT 0")
 if "payment_reference" not in existing_order_columns:
     cur.execute("ALTER TABLE orders ADD COLUMN payment_reference TEXT NOT NULL DEFAULT ''")
+if "Payment_provider" not in existing_order_columns:
+    cur.execute("ALTER TABLE orders ADD COLUMN payment_provider TEXT NOT NULL DEFAULT ''")
+if "payment_last4" not in existing_order_columns:
+    cur.execute("ALTER TABLE orders ADD COLUMN payment_last4 TEXT NOT NULL DEFAULT ''")
+if "payment_authorisation" not in existing_order_columns:
+    cur.execute("ALTER TABLE orders ADD COLUMN payment_authorisation TEXT NOT NULL DEFAULT ''")
 
 
 cur.execute(
@@ -125,7 +131,7 @@ cur.execute(
 
 existing_menu_columns = column_names(conn, "menu_items")
 if "description" not in existing_menu_columns:
-    cur.execute("ALTER TABLE menu_items ADD COLUMN description TEXT NOT NULL DEFAULT 'image_url TEXT NOT NULL DEFAULT 'images/fallback.svg', is_available INTEGER NOT NULL DEFAULT 1'")
+    cur.execute("ALTER TABLE menu_items ADD COLUMN description TEXT NOT NULL DEFAULT ''")
 if "image_url" not in existing_menu_columns:
     cur.execute("ALTER TABLE menu_items ADD COLUMN image_url TEXT NOT NULL DEFAULT 'images/fallback.jpg'")
 if "is_available" not in existing_menu_columns:
@@ -204,10 +210,11 @@ if cur.execute("SELECT COUNT(*) FROM users").fetchone()[0] == 0:
 if cur.execute("SELECT COUNT(*) FROM promo_codes").fetchone()[0] == 0:
     cur.executemany("INSERT INTO promo_codes (code, description, discount_rate, is_active) VALUES (?, ?, ?, ?)", PROMO_SEED)
 
-
 cur.execute("UPDATE orders SET subtotal = total_price WHERE subtotal = 0")
 cur.execute("UPDATE orders SET gst_amount = ROUND(total_price / 11, 2) WHERE gst_amount = 0")
 cur.execute("UPDATE orders SET status = 'Pending' WHERE status = 'pending'")
+cur.execute("UPDATE orders SET payment_method = 'Credit/Debit Card' WHERE payment_method IN ('Pay at Counter', 'Cash', 'EFTPOS/Card')")
+cur.execute("UPDATE orders SET payment_status = 'Paid' WHERE payment_status = 'Unpaid'")
 
 conn.commit()
 conn.close()
