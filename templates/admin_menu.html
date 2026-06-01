@@ -24,6 +24,18 @@
             <input id="price" name="price" type="number" step="0.01" min="0" required>
         </div>
         <div>
+            <label for="prep_minutes">Prep mins</label>
+            <input id="prep_minutes" name="prep_minutes" type="number" min="1" value="8" required>
+        </div>
+        <div>
+            <label for="stock_count">Stock count</label>
+            <input id="stock_count" name="stock_count" type="number" min="0" value="20" required>
+        </div>
+        <div>
+            <label for="dietary_tags">Dietary tags</label>
+            <input id="dietary_tags" name="dietary_tags" placeholder="Vegetarian, gluten-free, contains nuts">
+        </div>
+        <div>
             <label for="image_url">Image path or URL</label>
             <input id="image_url" name="image_url" placeholder="images/latte.jpg or https://...">
         </div>
@@ -47,6 +59,9 @@
                     <th>Category</th>
                     <th>Name</th>
                     <th>Description</th>
+                    <th>Dietary</th>
+                    <th>Prep</th>
+                    <th>Stock</th>
                     <th>Price</th>
                     <th>Availability</th>
                     <th>Action</th>
@@ -59,8 +74,16 @@
                     <td>{{ item.category }}</td>
                     <td>{{ item.name }}</td>
                     <td class="left-text">{{ item.description }}</td>
+                    <td>{{ item.dietary_tags or 'None' }}</td>
+                    <td>{{ item.prep_minutes }} mins</td>
+                    <td>
+                        <form method="POST" action="{{ url_for('update_menu_stock', item_id=item.id) }}" class="inline-stock">
+                            <input name="stock_count" type="number" min="0" value="{{ item.stock_count }}">
+                            <button type="submit" class="small-button">Save</button>
+                        </form>
+                    </td>
                     <td>${{ "%.2f"|format(item.price) }}</td>
-                    <td>{% if item.is_available %}Available{% else %}Hidden{% endif %}</td>
+                    <td>{% if item.is_available and item.stock_count > 0 %}Available{% elif item.stock_count <= 0 %}Out of stock{% else %}Hidden{% endif %}</td>
                     <td>
                         <form method="POST" action="{{ url_for('toggle_menu_item', item_id=item.id) }}">
                             <button type="submit">{% if item.is_available %}Hide{% else %}Show{% endif %}</button>

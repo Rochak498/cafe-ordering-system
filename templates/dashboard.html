@@ -177,4 +177,34 @@
         {% else %}<p>No loyalty customer data yet.</p>{% endif %}
     </article>
 </section>
+
+<section class="split-layout">
+    <article class="card">
+        <h3>Low Stock Alerts</h3>
+        {% if low_stock_items %}
+        <table>
+            <thead><tr><th>Item</th><th>Category</th><th>Stock</th></tr></thead>
+            <tbody>
+                {% for item in low_stock_items %}
+                <tr><td>{{ item.name }}</td><td>{{ item.category }}</td><td>{{ item.stock_count }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}<p>No low stock alerts.</p>{% endif %}
+    </article>
+
+    <article class="card">
+        <h3>Promotion Usage</h3>
+        {% if promo_summary %}
+        <table>
+            <thead><tr><th>Promo</th><th>Uses</th><th>Total Discount</th></tr></thead>
+            <tbody>
+                {% for promo in promo_summary %}
+                <tr><td>{{ promo.promo_code }}</td><td>{{ promo.count }}</td><td>${{ "%.2f"|format(promo.discount_total or 0) }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}<p>No promo codes used yet.</p>{% endif %}
+    </article>
+</section>
 {% endblock %}

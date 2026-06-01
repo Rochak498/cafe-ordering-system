@@ -18,6 +18,7 @@
         <div><strong>Phone:</strong> {{ order.customer_phone or 'Not provided' }}</div>
         <div><strong>Table / Service:</strong> {{ order.service_type }}</div>
         <div><strong>Payment:</strong> {{ order.payment_method }} — {{ order.payment_status }}</div>
+        <div><strong>Requested time:</strong> {{ order.requested_time or 'ASAP' }}</div>
         <div><strong>Item:</strong> {{ order.item_name }}</div>
         <div><strong>Quantity:</strong> {{ order.quantity }}</div>
         <div><strong>Unit Price:</strong> ${{ "%.2f"|format(order.unit_price) }}</div>
@@ -25,10 +26,12 @@
         <div><strong>Milk / Dietary:</strong> {{ order.milk_option }}</div>
         <div><strong>Extras:</strong> {{ order.extras or 'None' }}</div>
         <div><strong>Subtotal:</strong> ${{ "%.2f"|format(order.subtotal or 0) }}</div>
+        <div><strong>Discount:</strong> ${{ "%.2f"|format(order.discount_amount or 0) }}{% if order.promo_code %} ({{ order.promo_code }}){% endif %}</div>
         <div><strong>Payment surcharge:</strong> ${{ "%.2f"|format(order.service_fee or 0) }}</div>
         <div><strong>GST included:</strong> ${{ "%.2f"|format(order.gst_amount or 0) }}</div>
         <div><strong>Total:</strong> ${{ "%.2f"|format(order.total_price) }}</div>
-        <div><strong>Payment:</strong> {{ order.payment_method }} — {{ order.payment_status }}</div>
+        <div><strong>Payment:</strong> {{ order.payment_method }} — {{ order.payment_status }}</div>\
+        <div><strong>Requested time:</strong> {{ order.requested_time or 'ASAP' }}</div>
     </div>
 
     {% if order.notes %}<p><strong>Notes:</strong> {{ order.notes }}</p>{% endif %}

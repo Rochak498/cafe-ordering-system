@@ -61,6 +61,7 @@
                          <td class="left-text">
                             <strong>${{ "%.2f"|format(order.total_price) }}</strong>
                             <div class="muted small-text">Subtotal ${{ "%.2f"|format(order.subtotal or 0) }}</div>
+                            <div class="muted small-text">Discount ${{ "%.2f"|format(order.discount_amount or 0) }}{% if order.promo_code %} • {{ order.promo_code }}{% endif %}</div>
                             <div class="muted small-text">Modifiers ${{ "%.2f"|format(order.modifiers_total or 0) }} • Surcharge ${{ "%.2f"|format(order.service_fee or 0) }}</div>
                             <div class="muted small-text">GST incl. ${{ "%.2f"|format(order.gst_amount or 0) }}</div>
                         </td>

@@ -27,10 +27,12 @@
         <div><strong>Milk / Dietary:</strong> {{ order.milk_option }}</div>
         <div><strong>Extras:</strong> {{ order.extras or 'None' }}</div>
         <div><strong>Subtotal:</strong> ${{ "%.2f"|format(order.subtotal or 0) }}</div>
+        <div><strong>Discount:</strong> ${{ "%.2f"|format(order.discount_amount or 0) }}{% if order.promo_code %} ({{ order.promo_code }}){% endif %}</div>
         <div><strong>Payment surcharge:</strong> ${{ "%.2f"|format(order.service_fee or 0) }}</div>
         <div><strong>GST included:</strong> ${{ "%.2f"|format(order.gst_amount or 0) }}</div>
         <div><strong>Total:</strong> ${{ "%.2f"|format(order.total_price) }}</div>
         <div><strong>Payment:</strong> {{ order.payment_method }} — {{ order.payment_status }}</div>
+        <div><strong>Requested time:</strong> {{ order.requested_time or 'ASAP' }}</div>
         <div><strong>Status:</strong> <span class="status-badge status-{{ order.status|lower }}">{{ order.status }}</span></div>
     </div>
     {% if order.notes %}

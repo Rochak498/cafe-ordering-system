@@ -6,11 +6,12 @@
         <p class="eyebrow">Iteration 3 Product</p>
         <h2>Role-Based Cafe Ordering and Management System</h2>
         <p>
-            This iteration extends the ordering MVP with role-based staff access, menu administration,
-            order editing/cancellation, improved reporting, and a more realistic café workflow.
+            A realistic cafe ordering and POS-style web app with QR ordering, dine-in table selection, payment methods, promo codes,
+            loyalty tracking, kitchen display, customer feedback, inventory controls and owner analytics.
         </p>
         <div class="hero-actions">
             <a class="button-link" href="{{ url_for('menu') }}">Browse Customer Menu</a>
+            <a class="button-link secondary" href="{{ url_for('qr_page') }}">Scan QR Menu</a>
             {% if current_user %}
                 <a class="button-link secondary" href="{{ url_for('orders') }}">Open Staff Queue</a>
             {% else %}
@@ -24,6 +25,14 @@
             <span class="stat-label">Available menu items</span>
         </div>
         <div>
+            <span class="stat-value">{{ active_tables }}</span>
+            <span class="stat-label">Active dine-in tables</span>
+        </div>
+        <div>
+            <span class="stat-value">{{ low_stock }}</span>
+            <span class="stat-label">Low stock items</span>
+        </div>
+        <div>
             <span class="stat-value">{{ total_orders }}</span>
             <span class="stat-label">Orders recorded</span>
         </div>
@@ -34,19 +43,19 @@
     <div>
         <h3>Customer workflow</h3>
         <ol>
-            <li>Browse the menu through the web app or QR link.</li>
-            <li>Search/filter items and place an order.</li>
-            <li>Receive a unique order code.</li>
-            <li>Track order progress using the code.</li>
+            <li>Scan QR or open the web app.</li>
+            <li>Browse menu items with photos, dietary notes and prep times.</li>
+            <li>Select table/takeaway, modifiers, payment method and promo code.</li>
+            <li>Track order progress and view a digital receipt.</li>
         </ol>
     </div>
     <div>
         <h3>Staff/owner workflow</h3>
         <ol>
-            <li>Log in using staff credentials.</li>
-            <li>Review, search, edit, cancel, or update orders.</li>
-            <li>Maintain menu availability.</li>
-            <li>Use dashboard insights and CSV export for operations.</li>
+            <li>Log in to protected staff tools.</li>
+            <li>Manage orders, kitchen workflow, payments and cancellations.</li>
+            <li>Maintain menu stock, descriptions, images and availability.</li>
+            <li>Review dashboard analytics, transactions and customer feedback.</li>
         </ol>
     </div>
 </section>

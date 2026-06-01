@@ -5,13 +5,15 @@
     <div>
         <p class="eyebrow">Selected Item</p>
         <img class="selected-item-image" src="{{ menu_image_src(item.image_url) }}" alt="{{ item.name }}">
-        <h2>Place Order</h2>
-        <p><strong>Item:</strong> {{ item.name }}</p>
+        <h2>{{ item.name }}</h2>
         <p><strong>Category:</strong> {{ item.category }}</p>
         <p><strong>Description:</strong> {{ item.description }}</p>
+        {% if item.dietary_tags %}<p><strong>Dietary:</strong> {{ item.dietary_tags }}</p>{% endif %}
         <p><strong>Base Price:</strong> ${{ "%.2f"|format(item.price) }}</p>
+        <p><strong>Estimated prep:</strong> {{ item.prep_minutes }} minutes</p>
+        <p><strong>Stock left:</strong> {{ item.stock_count }}</p>
         <div class="price-note">
-            <strong>Real café pricing:</strong> alternative milks, extras, large size, and card/mobile payments may add surcharges.
+            <strong>Real cafe pricing:</strong> alternative milks, extras, large size, promo codes, and card/mobile payments may add surcharges.
         </div>
     </div>
 
@@ -29,6 +31,18 @@
             <option value="{{ number }}">Table {{ number }}</option>
             {% endfor %}
         </select>
+
+         <label for="requested_time">Requested Time</label>
+        <select id="requested_time" name="requested_time">
+            <option value="ASAP">ASAP</option>
+            <option value="In 10 minutes">In 10 minutes</option>
+            <option value="In 20 minutes">In 20 minutes</option>
+            <option value="In 30 minutes">In 30 minutes</option>
+        </select>
+
+         {% if modifier_options.show_size or modifier_options.show_milk or modifier_options.extra_options %}
+        <p class="muted small-text">{{ modifier_options.note }}</p>
+        {% endif %}
 
         <div class="two-col-form">
            {% if modifier_options.show_size or modifier_options.show_milk or modifier_options.extra_options %}
@@ -81,6 +95,10 @@
     {% endfor %}
     </div>
     {% endif %}
+
+
+        <label for="promo_code">Promo Code (optional)</label>
+        <input id="promo_code" name="promo_code" placeholder="WELCOME10, STUDENT10, COFFEE5">
 
         <label for="payment_method">Payment Method</label>
         <select id="payment_method" name="payment_method" required>

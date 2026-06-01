@@ -83,6 +83,16 @@
         <label for="quantity">Quantity</label>
         <input type="number" id="quantity" name="quantity" min="1" max="50" value="{{ order.quantity }}" required>
 
+        <label for="requested_time">Requested Time</label>
+        <select id="requested_time" name="requested_time">
+            {% for option in ['ASAP', 'In 10 minutes', 'In 20 minutes', 'In 30 minutes'] %}
+            <option value="{{ option }}" {% if order.requested_time == option %}selected{% endif %}>{{ option }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="promo_code">Promo Code</label>
+        <input id="promo_code" name="promo_code" value="{{ order.promo_code or '' }}" placeholder="WELCOME10, STUDENT10, COFFEE5">
+
         <label for="payment_method">Payment Method</label>
         <select id="payment_method" name="payment_method">
             {% for method, config in payment_methods.items() %}
