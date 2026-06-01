@@ -395,3 +395,40 @@ button.danger:hover { background: #991b1b; }
     font-weight: bold;
     color: var(--primary);
 }
+
+/* Additional styles for iteration 4 */
+:root {
+    --primary: #8b5a2b;
+    --primary-hover: #6f421f;
+    --header: #2b1d15;
+    --bg: #f7f1e8;
+    --card: #fffaf3;
+}
+.cafe-hero {
+    background: linear-gradient(135deg, #fff7ed 0%, #f5e6d3 100%);
+    border: 1px solid #ead4b8;
+}
+.tag-row {
+    display: inline-block;
+    background: #fef3c7;
+    color: #92400e;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+.inline-stock {
+    display: grid;
+    grid-template-columns: 80px auto;
+    gap: 6px;
+    align-items: center;
+}
+.inline-stock input { margin: 0; }
+.small-button { padding: 8px 10px; margin: 0; }
+.menu-card {
+    transition: transform .15s ease, box-shadow .15s ease;
+}
+.menu-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 28px rgba(0,0,0,.12);
+}
