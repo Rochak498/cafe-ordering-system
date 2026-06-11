@@ -477,3 +477,242 @@ button.danger:hover { background: #991b1b; }
     padding: 14px;
     margin: 12px 0;
 }
+
+/* Final polish after tutor feedback.
+   Kept the fixes simple so the layout is easier for me to explain in the demo. */
+
+/* Customer menu now looks closer to real cafe apps: image left, item details right. */
+.menu-list {
+    display: grid;
+    gap: 18px;
+}
+
+.menu-card-horizontal {
+    display: grid;
+    grid-template-columns: minmax(180px, 260px) minmax(0, 1fr);
+    padding: 0;
+    min-height: 210px;
+}
+
+.menu-image-panel {
+    background: #f3f4f6;
+    border-right: 1px solid var(--border);
+}
+
+.menu-card-horizontal .menu-image {
+    width: 100%;
+    height: 100%;
+    min-height: 210px;
+    object-fit: cover;
+    border-bottom: 0;
+}
+
+.menu-description-panel {
+    display: grid;
+    gap: 8px;
+    align-content: start;
+}
+
+.menu-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 14px;
+}
+
+.menu-title-row h3,
+.menu-title-row p {
+    margin-top: 0;
+}
+
+.menu-title-row .price {
+    white-space: nowrap;
+    margin: 0;
+    color: var(--primary);
+}
+
+.menu-description {
+    line-height: 1.5;
+    color: #374151;
+    margin: 0;
+}
+
+/* Dashboard and report tables were overflowing the card boxes.
+   This keeps all long tables scrollable inside their own card. */
+.card table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    white-space: nowrap;
+}
+
+.card table thead,
+.card table tbody,
+.card table tr {
+    width: 100%;
+}
+
+.card table th,
+.card table td {
+    min-width: 90px;
+}
+
+/* Keeps long text columns readable without stretching the whole dashboard. */
+.card table td:first-child,
+.card table th:first-child {
+    white-space: normal;
+    min-width: 140px;
+}
+
+/* Prevents dashboard chips and recent-order rows from pushing outside cards. */
+.table-chip-grid,
+.recent-list,
+.recent-order,
+.summary-line {
+    max-width: 100%;
+}
+
+.recent-order {
+    flex-wrap: wrap;
+}
+
+/* Better mobile behaviour for the updated menu cards and long forms. */
+@media (max-width: 760px) {
+    .menu-card-horizontal {
+        grid-template-columns: 1fr;
+    }
+
+    .menu-image-panel {
+        border-right: 0;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .menu-card-horizontal .menu-image {
+        height: 210px;
+    }
+
+    .menu-title-row {
+        display: block;
+    }
+
+    .quick-add {
+        grid-template-columns: 1fr;
+    }
+
+    .order-form .two-col-form {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Final deployment polish: keeps dashboard/admin tables inside their white cards. */
+.card {
+    overflow-x: auto;
+    overflow-wrap: anywhere;
+}
+
+/* Some reports have many columns, so this lets the card scroll instead of breaking the layout. */
+.card > table {
+    min-width: 560px;
+}
+
+/* Friendly error pages for broken links or temporary server problems. */
+.error-page {
+    text-align: center;
+    max-width: 760px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.error-page .button-link {
+    margin: 8px;
+}
+
+/* Final menu layout fix */
+.menu-grid-rich {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 22px;
+}
+
+/* Wide horizontal cafe menu card */
+.menu-card-horizontal {
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+    width: 100%;
+    min-height: 230px;
+    padding: 0;
+    overflow: hidden;
+}
+
+/* Left image */
+.menu-image-panel {
+    min-height: 240px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.menu-card-horizontal .menu-image {
+    object-fit: contain;
+    background: #f3f4f6;
+    padding: 8px;
+}
+
+/* Right description area */
+.menu-description-panel {
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+}
+
+/* Prevent text squeezing */
+.menu-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 18px;
+    min-width: 0;
+}
+
+.menu-title-row h3 {
+    margin: 0;
+    font-size: 1.35rem;
+    line-height: 1.25;
+    word-break: normal;
+    overflow-wrap: anywhere;
+}
+
+.menu-description {
+    line-height: 1.55;
+    color: #374151;
+    margin: 0;
+    max-width: 720px;
+}
+
+.menu-actions {
+    margin-top: auto;
+}
+
+/* Mobile fix */
+@media (max-width: 760px) {
+    .menu-card-horizontal {
+        grid-template-columns: 1fr;
+    }
+
+    .menu-image-panel {
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .menu-card-horizontal .menu-image {
+        height: 220px;
+        min-height: 220px;
+    }
+
+    .menu-title-row {
+        display: block;
+    }
+}
+

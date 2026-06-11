@@ -12,8 +12,11 @@ from qrcode.image.svg import SvgImage
 
 
 app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY", "change_this_before_production")
-DB_PATH = "database.db"
+# Render will use SECRET_KEY from environment variables.
+# The fallback is only for local testing on my laptop.
+app.secret_key = os.getenv("SECRET_KEY", "dev-secret-key-change-before-real-use")
+# Keeping the DB path configurable helps the app run both locally and on Render.
+DB_PATH = os.getenv("DATABASE_PATH", "database.db")
 VALID_STATUSES = ("Pending", "Preparing", "Ready", "Completed", "Cancelled")
 STAFF_STATUSES = ("Pending", "Preparing", "Ready", "Completed")
 STATUS_HELP_TEXT = {
@@ -983,7 +986,7 @@ def transactions():
 
 
 # -----------------------------
-# Real café multi-item cart flow
+# Real cafe multi-item cart flow
 # -----------------------------
 def cart_items():
     return session.setdefault("cart", [])
@@ -1261,5 +1264,25 @@ def dashboard():
         promo_summary=promo_summary,
     )
 
+@app.route("/health")
+def health_check():
+    # Simple endpoint for Render or my tutor to check the app is alive.
+    return {"status": "ok", "app": "Daxxi140 Cafe Ordering System"}, 200
+
+
+@app.errorhandler(404)
+def page_not_found(error):
+    # Friendly page instead of a plain browser error.
+    return render_template("404.html"), 404
+
+
+@app.errorhandler(500)
+def internal_server_error(error):
+    # Keep the error page neat for demo purposes.
+    return render_template("500.html"), 500
+
+
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    port = int(os.getenv("PORT", "5000"))
+    debug_mode = os.getenv("FLASK_DEBUG", "0") == "1"
+    app.run(host="0.0.0.0", port=port, debug=debug_mode)

@@ -1,6 +1,8 @@
+import os
 import sqlite3
 
-DB_PATH = "database.db"
+# Same DB path as app.py, useful when deployed with a persistent disk later.
+DB_PATH = os.getenv("DATABASE_PATH", "database.db")
 
 MENU_SEED = [
     ("Coffee", "Latte", 5.50, "Smooth espresso with steamed milk and a light foam finish.", "images/latte.jpg", "Vegetarian", 7, 30, 1),

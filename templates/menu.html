@@ -39,13 +39,7 @@
                 {% if item.dietary_tags %}<p class="tag-row">{{ item.dietary_tags }}</p>{% endif %}
                 <p class="muted small-text">Estimated prep: {{ item.prep_minutes }} mins • Stock: {{ item.stock_count }}</p>
                 <p class="price">${{ "%.2f"|format(item.price) }}</p>
-                <div class="menu-actions">
-                    <form method="POST" action="{{ url_for('add_to_cart', item_id=item.id) }}" class="quick-add">
-                        <input type="number" name="quantity" min="1" max="20" value="1" aria-label="Quantity">
-                        <button type="submit">Add to Cart</button>
-                    </form>
-                    <a class="button-link secondary" href="{{ url_for('create_order', item_id=item.id) }}">Customise & Pay</a>
-                </div>
+                <a class="button-link" href="{{ url_for('create_order', item_id=item.id) }}">Order Now</a>
             </div>
         </article>
         {% else %}

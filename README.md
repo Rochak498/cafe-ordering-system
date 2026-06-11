@@ -115,3 +115,27 @@ This final version includes realistic café/POS features:
 - improved dashboard with payment method and modifier revenue summaries
 
 Demo recommendation: create a large coffee order with oat milk, extra shot, and EFTPOS/Card payment to demonstrate realistic café pricing and transactions.
+
+
+
+## Deployment files included
+
+- `Procfile`
+- `render.yaml`
+- `runtime.txt`
+- `.gitignore`
+- `DEPLOYMENT_GUIDE.md`
+
+## Render deployment command
+
+Build command:
+
+```bash
+pip install -r requirements.txt
+```
+
+Start command:
+
+```bash
+python init_db.py && gunicorn app:app --bind 0.0.0.0:$PORT
+```

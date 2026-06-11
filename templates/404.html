@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card error-page">
+    <h2>Page not found</h2>
+    <p>The page you are looking for does not exist or the link may have changed.</p>
+    <a class="button-link" href="{{ url_for('home') }}">Back to Home</a>
+    <a class="button-link secondary" href="{{ url_for('menu') }}">Browse Menu</a>
+</section>
+{% endblock %}
