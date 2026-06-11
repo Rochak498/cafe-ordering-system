@@ -1,12 +1,25 @@
 services:
   - type: web
     name: daxxi140-cafe-ordering-system
-    env: python
-    plan: free
+    runtime: python
+    plan: starter
+    numInstances: 1
+    autoDeployTrigger: commit
     buildCommand: pip install -r requirements.txt
     startCommand: python init_db.py && gunicorn app:app --bind 0.0.0.0:$PORT
+    healthCheckPath: /health
+    disk:
+      name: app-data
+      mountPath: /opt/render/project/src/data
+      sizeGB: 1
     envVars:
       - key: SECRET_KEY
         generateValue: true
+      - key: DATABASE_PATH
+        value: /opt/render/project/src/data/database.db
       - key: FLASK_DEBUG
         value: "0"
+      - key: SESSION_COOKIE_SECURE
+        value: "1"
+      - key: PREFERRED_URL_SCHEME
+        value: https

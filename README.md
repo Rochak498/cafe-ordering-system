@@ -139,3 +139,35 @@ Start command:
 ```bash
 python init_db.py && gunicorn app:app --bind 0.0.0.0:$PORT
 ```
+
+
+## Production Deployment (Render)
+
+This project is deployment-ready for Render using the included `render.yaml` blueprint.
+
+### Recommended setup
+
+- Use a **paid** web service plan so you can attach a persistent disk for SQLite.
+- Set `DATABASE_PATH` to `/opt/render/project/src/data/database.db`.
+- Keep `SECRET_KEY` in Render environment variables, not in the repo.
+- Leave `FLASK_DEBUG=0` in production.
+
+### Important
+
+This project currently uses SQLite. On Render, local filesystem data is ephemeral unless you attach a persistent disk.
+
+### Deploy steps
+
+1. Push this repository to GitHub.
+2. In Render, create a new **Blueprint** or **Web Service** from the repo.
+3. Confirm the service uses the included `render.yaml`.
+4. Attach a persistent disk at `/opt/render/project/src/data`.
+5. Deploy the service.
+6. Check `/health` after deploy.
+
+### Demo accounts
+
+- Username: `staff` / Password: `staff123`
+- Username: `admin` / Password: `admin123`
+
+Change these passwords before any real public use.

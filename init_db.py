@@ -1,8 +1,22 @@
 import os
 import sqlite3
+from werkzeug.security import generate_password_hash
 
 # Same DB path as app.py, useful when deployed with a persistent disk later.
 DB_PATH = os.getenv("DATABASE_PATH", "database.db")
+
+
+def ensure_db_directory_exists(path: str) -> None:
+    directory = os.path.dirname(os.path.abspath(path))
+    if directory and not os.path.exists(directory):
+        os.makedirs(directory, exist_ok=True)
+
+
+def is_password_hash(value: str) -> bool:
+    return value.startswith("pbkdf2:") or value.startswith("scrypt:")
+
+
+ensure_db_directory_exists(DB_PATH)
 
 MENU_SEED = [
     ("Coffee", "Latte", 5.50, "Smooth espresso with steamed milk and a light foam finish.", "images/latte.jpg", "Vegetarian", 7, 30, 1),
@@ -18,8 +32,8 @@ MENU_SEED = [
 ]
 
 USER_SEED = [
-    ("staff", "staff123", "Staff Member", "staff"),
-    ("admin", "admin123", "Cafe Owner", "admin"),
+    ("staff", generate_password_hash("staff123"), "Staff Member", "staff"),
+    ("admin", generate_password_hash("admin123"), "Cafe Owner", "admin"),
 ]
 
 PROMO_SEED = [
@@ -180,6 +194,11 @@ if cur.execute("SELECT COUNT(*) FROM users").fetchone()[0] == 0:
 
 if cur.execute("SELECT COUNT(*) FROM promo_codes").fetchone()[0] == 0:
     cur.executemany("INSERT INTO promo_codes (code, description, discount_rate, is_active) VALUES (?, ?, ?, ?)", PROMO_SEED)
+
+# Migrate any legacy plaintext user passwords to hashed values.
+for user_row in cur.execute("SELECT id, password FROM users").fetchall():
+    if user_row[1] and not is_password_hash(user_row[1]):
+        cur.execute("UPDATE users SET password = ? WHERE id = ?", (generate_password_hash(user_row[1]), user_row[0]))
 
 cur.execute("UPDATE orders SET subtotal = total_price WHERE subtotal = 0")
 cur.execute("UPDATE orders SET gst_amount = ROUND(total_price / 11, 2) WHERE gst_amount = 0")

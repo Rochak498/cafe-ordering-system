@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, Response, session
+from werkzeug.security import check_password_hash
 import csv
 import io
 import os
@@ -17,6 +18,46 @@ app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "dev-secret-key-change-before-real-use")
 # Keeping the DB path configurable helps the app run both locally and on Render.
 DB_PATH = os.getenv("DATABASE_PATH", "database.db")
+
+# Production-friendly defaults. SESSION_COOKIE_SECURE should be true when the app is behind HTTPS
+# such as on Render's default onrender.com domain or a custom TLS-enabled domain.
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SECURE=os.getenv("SESSION_COOKIE_SECURE", "1") == "1",
+    PREFERRED_URL_SCHEME=os.getenv("PREFERRED_URL_SCHEME", "https"),
+)
+
+
+def ensure_db_directory_exists(path: str) -> None:
+    directory = os.path.dirname(os.path.abspath(path))
+    if directory and not os.path.exists(directory):
+        os.makedirs(directory, exist_ok=True)
+
+
+def is_password_hash(value: str) -> bool:
+    return value.startswith("pbkdf2:") or value.startswith("scrypt:")
+
+
+def verify_password(stored_password: str, provided_password: str) -> bool:
+    """Support hashed passwords in production and legacy plaintext passwords during migration."""
+    if not stored_password:
+        return False
+    if is_password_hash(stored_password):
+        return check_password_hash(stored_password, provided_password)
+    return secrets.compare_digest(stored_password, provided_password)
+
+
+def is_safe_next_url(target: str | None) -> bool:
+    if not target:
+        return False
+    parsed_target = urlparse(target)
+    if parsed_target.scheme or parsed_target.netloc:
+        return False
+    return parsed_target.path.startswith("/")
+
+
+ensure_db_directory_exists(DB_PATH)
 VALID_STATUSES = ("Pending", "Preparing", "Ready", "Completed", "Cancelled")
 STAFF_STATUSES = ("Pending", "Preparing", "Ready", "Completed")
 STATUS_HELP_TEXT = {
@@ -138,6 +179,7 @@ PROMO_CODES = {
 
 
 def get_db_connection():
+    ensure_db_directory_exists(DB_PATH)
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
@@ -396,18 +438,20 @@ def home():
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    next_url = request.args.get("next")
     if request.method == "POST":
         username = request.form.get("username", "").strip().lower()
         password = request.form.get("password", "").strip()
         with closing(get_db_connection()) as conn:
             user = conn.execute(
-                "SELECT * FROM users WHERE username = ? AND password = ?",
-                (username, password),
+                "SELECT * FROM users WHERE username = ?",
+                (username,),
             ).fetchone()
-        if user:
+        if user and verify_password(user["password"], password):
             session["user"] = {"username": user["username"], "role": user["role"], "display_name": user["display_name"]}
             flash(f"Welcome, {user['display_name']}.", "success")
-            return redirect(request.args.get("next") or url_for("orders"))
+            destination = next_url if is_safe_next_url(next_url) else url_for("orders")
+            return redirect(destination)
         flash("Invalid username or password.", "error")
     return render_template("login.html")
 
@@ -1266,8 +1310,13 @@ def dashboard():
 
 @app.route("/health")
 def health_check():
-    # Simple endpoint for Render or my tutor to check the app is alive.
-    return {"status": "ok", "app": "Daxxi140 Cafe Ordering System"}, 200
+    # Simple endpoint for Render or my tutor to check the app and database are alive.
+    try:
+        with closing(get_db_connection()) as conn:
+            conn.execute("SELECT 1").fetchone()
+        return {"status": "ok", "app": "Daxxi140 Cafe Ordering System", "database": "ok"}, 200
+    except sqlite3.Error as error:
+        return {"status": "error", "app": "Daxxi140 Cafe Ordering System", "database": str(error)}, 500
 
 
 @app.errorhandler(404)
