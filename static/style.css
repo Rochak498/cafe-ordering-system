@@ -449,7 +449,7 @@ button.danger:hover { background: #991b1b; }
     margin-top: 12px;
 }
 
-/* Real café checkout/cart polish */
+/* Real cafe checkout/cart polish */
 .menu-actions { display: grid; gap: 10px; margin-top: 12px; }
 .quick-add { display: grid; grid-template-columns: 90px 1fr; gap: 8px; align-items: center; }
 .quick-add input { margin: 0; }
