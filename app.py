@@ -536,7 +536,7 @@ def create_order(item_id):
                     milk_option, extras, modifiers_total, subtotal, discount_amount, service_fee, gst_amount, total_price, notes, requested_time, promo_code, status,
                     payment_method, payment_status, payment_reference, payment_provider, payment_last4, payment_authorisation
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     order_code,
